@@ -10,7 +10,7 @@ class App extends Component {
   }
 
   componentDidMount = () => {
-    this.props.actions.setEntries(['movie 1', 'movie 2', 'movie 3']);
+    this.props.actions.fetchEntries('https://feed.theplatform.com/f/levyRC/foxplay_fmp_hl_android');
   }
 
   render = () => {
@@ -19,11 +19,14 @@ class App extends Component {
     if (!movie.get('entries')) return null;
 
     return (
-      <ul>
-        {movie.get('entries').map((entry, key) =>
-          <li key={key}>{entry}</li>
-        )}
-      </ul>
+      <div>
+        <p>{movie.get('isLoading') && 'Loading...'}</p>
+        <ul>
+          {movie.get('entries').map((entry, key) =>
+            <li key={key}>{entry.title}</li>
+          )}
+        </ul>
+      </div>
     );
   }
 }
