@@ -7,7 +7,8 @@ import { createDevTools } from 'redux-devtools';
 import LogMonitor from 'redux-devtools-log-monitor';
 import DockMonitor from 'redux-devtools-dock-monitor';
 import App from 'containers/App';
-import Channel from 'pages/Channel';
+import Home from 'containers/Home';
+import Channel from 'containers/Channel';
 import configureStore from 'store/configureStore';
 import 'app.css';
 
@@ -16,6 +17,7 @@ const store = configureStore();
 const component = (
   <ReduxRouter>
     <Route path='/' component={App}>
+      <Route path='home' component={Home} />
       <Route path='channel/:id' component={Channel} />
     </Route>
   </ReduxRouter>

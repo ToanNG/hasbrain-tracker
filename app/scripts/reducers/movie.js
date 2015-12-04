@@ -7,7 +7,7 @@ export default function movie(state = INITIAL_STATE, action) {
       return setEntries(state, action.entries);
 
     case FETCH_PENDING:
-      return state.merge({ isLoading: true });
+      return state.merge({ isLoading: true, entries: [] });
 
     case FETCH_SUCCESS:
       return setEntries(state, action.result.entries).merge({ isLoading: false });
