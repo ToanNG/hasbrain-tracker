@@ -3,6 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Link } from 'react-router';
 import { pushState } from 'redux-router';
+import RouteCSSTransitionGroup from 'containers/RouteCSSTransitionGroup';
 
 @connect(
   null,
@@ -21,7 +22,12 @@ class App extends Component {
         <a href='#' onClick={this._handleClick}>
           /channel/1
         </a>
-        {this.props.children}
+        <RouteCSSTransitionGroup
+          component='div' transitionName='page'
+          transitionEnterTimeout={500} transitionLeaveTimeout={250}
+        >
+          {this.props.children}
+        </RouteCSSTransitionGroup>
       </div>
     );
   }
