@@ -29,7 +29,7 @@ export default {
   module: {
     loaders: [
       { test: /\.jsx?$/, loaders: ['react-hot', 'babel'], exclude: /node_modules/ },
-      { test: /\.css$/, loader: 'style!css!myth!sass' },
+      { test: /\.s?css$/, loader: 'style!css!myth!sass' },
     ],
   },
 };
