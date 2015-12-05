@@ -1,0 +1,1 @@
+### React boilerplate with next syntax
