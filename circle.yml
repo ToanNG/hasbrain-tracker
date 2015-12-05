@@ -1,0 +1,9 @@
+machine:
+  environment:
+    NODE_ENV: development
+  node:
+    version: v4.2.1
+
+test:
+  override:
+    - npm test
