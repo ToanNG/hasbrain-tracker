@@ -1,9 +1,10 @@
-import React from 'react/addons';
+import React from 'react';
+import ReactTestUtils from 'react-addons-test-utils';
 import {expect} from 'chai';
 import {spy} from 'sinon';
 import List from '../../app/scripts/components/List';
 
-const {renderIntoDocument, scryRenderedDOMComponentsWithTag, Simulate} = React.addons.TestUtils;
+const {renderIntoDocument, scryRenderedDOMComponentsWithTag, Simulate} = ReactTestUtils;
 
 describe('List', () => {
 

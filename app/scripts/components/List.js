@@ -11,7 +11,7 @@ class List extends Component {
     return (
       <ul>
         {dataSource.map((item, key) =>
-          <li key={key}>
+          <li key={key} onClick={this._handleClick.bind(null, item.id)}>
             {item.title}
           </li>
         )}

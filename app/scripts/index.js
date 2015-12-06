@@ -10,6 +10,7 @@ import App from 'containers/App';
 import Home from 'containers/Home';
 import Channel from 'containers/Channel';
 import configureStore from 'store/configureStore';
+import 'loaders.css/loaders.min.css';
 import 'app.css';
 
 const dest = document.getElementById('root');

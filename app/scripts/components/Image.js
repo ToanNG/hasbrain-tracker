@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import Loader from 'react-loaders';
-import 'loaders.css/src/animations/ball-scale-multiple.scss';
 
-class Image extends Component {
+class ImageComponent extends Component {
   static defaultProps = {
     loader: <Loader type='ball-scale-multiple' />,
     onLoad: () => undefined,
@@ -16,7 +15,7 @@ class Image extends Component {
   }
 
   _checkValidImage = () => {
-    let image = document.createElement('img');
+    let image = new Image();
     image.src = this.props.src;
     image.onload = this._handleLoad;
     image.onerror = this._handleError;
@@ -37,7 +36,7 @@ class Image extends Component {
     if (!isLoading) {
       style = {
         ...style,
-        background: `url(${src}) center/cover no-repeat #CCC`,
+        background: `url(${src}) center/cover no-repeat`,
       };
     }
 
@@ -60,4 +59,4 @@ class Image extends Component {
   }
 }
 
-export default Image;
+export default ImageComponent;
