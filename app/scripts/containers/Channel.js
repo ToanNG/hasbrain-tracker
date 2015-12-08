@@ -19,17 +19,23 @@ class Channel extends Component {
 
   render = () => {
     const { movie, actions } = this.props;
+    const entries = movie.get('entries');
+    const entities = movie.get('entities');
 
-    if (!movie.get('entries')) return null;
+    if (!entries) return null;
 
     return (
       <div className='page'>
         <h1>Channel</h1>
         <p>{movie.get('isLoading') && 'Loading...'}</p>
         <ul>
-          {movie.get('entries').map((entry, key) =>
-            <li key={key}>{entry.title}</li>
-          )}
+          {entries.map((entryId, key) => {
+            let video = entities.videos[entryId];
+            return <li key={key}>
+              {video.title}
+              {video.categories}
+            </li>;
+          })}
         </ul>
       </div>
     );
