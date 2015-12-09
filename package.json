@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_ENV=development node babelhook.js",
+    "dev": "webpack --progress --colors --watch",
     "test": "mocha --compilers js:babel-core/register --require ./__test/test-helper.js '__test/**/*.@(js|jsx)'"
   },
   "author": "Toan Nguyen Gia",
@@ -46,7 +46,7 @@
     "react-dom": "^0.14.1",
     "react-loaders": "^2.0.0",
     "react-redux": "^4.0.0",
-    "react-router": "^1.0.0",
+    "react-router": "^1.0.2",
     "react-static-container": "^1.0.0",
     "redux": "^3.0.4",
     "redux-router": "^1.0.0-beta4",

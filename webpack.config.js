@@ -1,19 +1,17 @@
-import webpack from 'webpack';
+var webpack = require('webpack');
 
-export default {
+module.exports = {
   context: __dirname + '/app/scripts',
-  entry: [
-    'webpack-dev-server/client?http://0.0.0.0:8080',
-    'webpack/hot/only-dev-server',
-    './index',
-  ],
+  entry: {
+    app: './index',
+    background: './background',
+  },
   output: {
     path: __dirname + '/dist',
     publicPath: '/assets/',
-    filename: 'bundle.js',
+    filename: '[name].js',
   },
   plugins: [
-    new webpack.HotModuleReplacementPlugin(),
     new webpack.DefinePlugin({
       'process.env': {
         NODE_ENV: JSON.stringify('development'),
@@ -28,7 +26,7 @@ export default {
   },
   module: {
     loaders: [
-      { test: /\.jsx?$/, loaders: ['react-hot', 'babel'], exclude: /node_modules/ },
+      { test: /\.jsx?$/, loader: 'babel', exclude: /node_modules/ },
       { test: /\.s?css$/, loader: 'style!css!myth!sass' },
     ],
   },

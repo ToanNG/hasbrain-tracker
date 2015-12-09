@@ -1,0 +1,15 @@
+{
+  "manifest_version": 2,
+  "name": "React Chrome extension",
+  "version": "1.0",
+
+  "description": "Chrome extension with React and Redux",
+
+  "chrome_url_overrides" : {
+    "newtab": "page.html"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ]
+}
