@@ -1,11 +1,10 @@
 import React from 'react';
 import { render } from 'react-dom';
 import { Provider } from 'react-redux';
-import { ReduxRouter } from 'redux-router';
-import { Route, Link } from 'react-router';
 import { createDevTools } from 'redux-devtools';
 import LogMonitor from 'redux-devtools-log-monitor';
 import DockMonitor from 'redux-devtools-dock-monitor';
+import { Router, Route, IndexRoute } from 'containers/Router';
 import App from 'containers/App';
 import Home from 'containers/Home';
 import Channel from 'containers/Channel';
@@ -16,12 +15,13 @@ import 'app.css';
 const dest = document.getElementById('root');
 const store = configureStore();
 const component = (
-  <ReduxRouter>
-    <Route path='/' component={App}>
-      <Route path='home' component={Home} />
-      <Route path='channel/:id' component={Channel} />
+  <Router>
+    <Route name='app' component={App} setDefault>
+      <IndexRoute component={Home} />
+      <Route name='home' component={Home} />
+      <Route name='channel' component={Channel} />
     </Route>
-  </ReduxRouter>
+  </Router>
 );
 
 if (__DEVTOOLS__) {
