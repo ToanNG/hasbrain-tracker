@@ -1,7 +1,7 @@
 import React, { Component, PropTypes } from 'react';
 
 const Home = () => (
-  <div className='page'>
+  <div className='screen'>
     <h1>Home</h1>
   </div>
 );

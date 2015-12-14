@@ -25,7 +25,7 @@ class Channel extends Component {
     if (!entries) return null;
 
     return (
-      <div className='page'>
+      <div className='screen'>
         <h1>Channel</h1>
         <p>{movie.get('isLoading') && 'Loading...'}</p>
         <ul>

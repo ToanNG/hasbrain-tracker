@@ -4,29 +4,31 @@
 }
 
 body {
+  font-family: 'Roboto', sans-serif;
+
   h1 {
     color: var(--purple);
     padding: var(--large);
   }
 }
 
-.page {
+.screen {
   position: absolute;
 }
 
-.page-enter {
+.screen-enter {
   opacity: 0.01;
 
-  &.page-enter-active {
+  &.screen-enter-active {
     opacity: 1;
     transition: opacity 250ms 250ms ease-in;
   }
 }
 
-.page-leave {
+.screen-leave {
   opacity: 1;
 
-  &.page-leave-active {
+  &.screen-leave-active {
     opacity: 0.01;
     transition: opacity 250ms ease-in;
   }

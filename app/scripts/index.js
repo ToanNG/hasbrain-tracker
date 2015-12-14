@@ -6,6 +6,7 @@ import LogMonitor from 'redux-devtools-log-monitor';
 import DockMonitor from 'redux-devtools-dock-monitor';
 import { Router, Route, IndexRoute } from 'containers/Router';
 import App from 'containers/App';
+import Login from 'containers/Login';
 import Home from 'containers/Home';
 import Channel from 'containers/Channel';
 import configureStore from 'store/configureStore';
@@ -17,7 +18,7 @@ const store = configureStore();
 const component = (
   <Router>
     <Route name='app' component={App} setDefault>
-      <IndexRoute component={Home} />
+      <IndexRoute component={Login} />
       <Route name='home' component={Home} />
       <Route name='channel' component={Channel} />
     </Route>

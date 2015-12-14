@@ -28,7 +28,9 @@ class App extends Component {
         <a href='#' onClick={this._handleClickChannel}>
           Channel
         </a>
-        {this.props.children}
+        <RouteCSSTransitionGroup transitionName='screen' transitionEnterTimeout={500} transitionLeaveTimeout={250}>
+          {this.props.children}
+        </RouteCSSTransitionGroup>
       </div>
     );
   }

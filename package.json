@@ -40,6 +40,7 @@
     "immutable": "^3.7.5",
     "isomorphic-fetch": "^2.2.0",
     "loaders.css": "^0.1.1",
+    "material-ui": "^0.13.4",
     "normalizr": "^1.4.0",
     "react": "^0.14.3",
     "react-addons-css-transition-group": "^0.14.3",
@@ -47,6 +48,7 @@
     "react-loaders": "^2.0.0",
     "react-redux": "^4.0.0",
     "react-static-container": "^1.0.0",
+    "react-tap-event-plugin": "^0.2.1",
     "redux": "^3.0.4",
     "sinon": "^1.17.2"
   },

@@ -4,28 +4,28 @@ import StaticContainer from 'react-static-container';
 
 class RouteCSSTransitionGroup extends Component {
   static contextTypes = {
-    location: PropTypes.object,
+    screen: PropTypes.string,
   }
 
   state = {
-    previousPathname: null,
+    previousScreen: null,
   }
 
   componentWillReceiveProps = (nextProps, nextContext) => {
-    if (nextContext.location.pathname !== this.context.location.pathname) {
-      this.setState({ previousPathname: this.context.location.pathname });
+    if (nextContext.screen !== this.context.screen) {
+      this.setState({ previousScreen: this.context.screen });
     }
   }
 
   render = () => {
     const { children, ...props } = this.props;
-    const { previousPathname } = this.state;
+    const { previousScreen } = this.state;
 
     return (
       <ReactCSSTransitionGroup {...props}>
         <StaticContainer
-          key={previousPathname || this.context.location.pathname}
-          shouldUpdate={!previousPathname}
+          key={previousScreen || this.context.screen}
+          shouldUpdate={!previousScreen}
         >
           {children}
         </StaticContainer>
@@ -34,8 +34,8 @@ class RouteCSSTransitionGroup extends Component {
   }
 
   componentDidUpdate = () => {
-    if (this.state.previousPathname) {
-      this.setState({ previousPathname: null });
+    if (this.state.previousScreen) {
+      this.setState({ previousScreen: null });
     }
   }
 }

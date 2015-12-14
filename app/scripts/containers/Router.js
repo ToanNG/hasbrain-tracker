@@ -14,6 +14,14 @@ const INITIAL_STATE = Map({
   })
 )
 class Router extends Component {
+  static childContextTypes = {
+    screen: PropTypes.string,
+  }
+
+  getChildContext = () => ({
+    screen: this.props.router.get('currentScreen'),
+  })
+
   state = {
     routeMap: null,
   }
