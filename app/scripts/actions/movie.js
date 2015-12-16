@@ -9,6 +9,6 @@ export function setEntries(entries) {
 export function fetchEntries(url) {
   return {
     types: [FETCH_PENDING, FETCH_SUCCESS, FETCH_FAILURE],
-    promise: fetch(url),
+    api: fetch(url),
   };
 }

@@ -3,31 +3,39 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import RouteCSSTransitionGroup from 'containers/RouteCSSTransitionGroup';
 import { switchTo } from 'containers/Router';
+import * as AuthActions from 'actions/auth';
 
 @connect(
-  null,
+  mapStateToProps,
   mapDispatchToProps
 )
 class App extends Component {
-  _handleClickHome = (event) => {
-    event.preventDefault();
-    this.props.switchTo('home');
+  static propTypes = {
+    auth: PropTypes.object.isRequired,
+    switchTo: PropTypes.func.isRequired,
+    actions: PropTypes.object.isRequired,
   }
 
-  _handleClickChannel = (event) => {
-    event.preventDefault();
-    this.props.switchTo('channel');
+  componentDidMount = () => {
+    this.props.actions.retrieveToken();
+  }
+
+  componentWillReceiveProps = (nextProps, nextContext) => {
+    const {switchTo, actions} = this.props;
+
+    if (this.props.auth.get('isLoggedIn') !== nextProps.auth.get('isLoggedIn')) {
+      if (nextProps.auth.get('isLoggedIn')) {
+        actions.setToken(nextProps.auth.get('token'));
+        switchTo('home');
+      } else {
+        switchTo('login');
+      }
+    }
   }
 
   render = () => {
     return (
       <div>
-        <a href='#' onClick={this._handleClickHome}>
-          Home
-        </a>
-        <a href='#' onClick={this._handleClickChannel}>
-          Channel
-        </a>
         <RouteCSSTransitionGroup transitionName='screen' transitionEnterTimeout={500} transitionLeaveTimeout={250}>
           {this.props.children}
         </RouteCSSTransitionGroup>
@@ -36,9 +44,16 @@ class App extends Component {
   }
 }
 
+function mapStateToProps(state) {
+  return {
+    auth: state.auth,
+  };
+}
+
 function mapDispatchToProps(dispatch) {
   return {
     switchTo: bindActionCreators(switchTo, dispatch),
+    actions: bindActionCreators(AuthActions, dispatch),
   };
 }
 

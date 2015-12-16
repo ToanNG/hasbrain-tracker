@@ -8,9 +8,7 @@ export default function promiseMiddleware() {
     const [REQUEST, SUCCESS, FAILURE] = types;
     next({ ...rest, type: REQUEST });
 
-    return promise.then(response =>
-      response.json()
-    ).then(result =>
+    return promise.then(result =>
       next({ ...rest, result, type: SUCCESS })
     ).catch(error =>
       next({ ...rest, error, type: FAILURE })
