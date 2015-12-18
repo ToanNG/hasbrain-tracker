@@ -45,6 +45,7 @@ class LoginForm extends Component {
             this.emailInput = node;
           }}
           disabled={disabled}
+          fullWidth={true}
           errorText={errorText}
           floatingLabelText='Email' />
         <br />
@@ -53,6 +54,7 @@ class LoginForm extends Component {
             this.passwordInput = node;
           }}
           disabled={disabled}
+          fullWidth={true}
           errorText={errorText}
           type='password'
           floatingLabelText='Password' />

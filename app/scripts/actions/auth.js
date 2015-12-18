@@ -6,7 +6,7 @@ import storage from 'helpers/storage';
 export function login({ email, password }) {
   return {
     types: [LOGIN, LOGIN_SUCCESS, LOGIN_FAIL],
-    api: fetch('http://localhost/oauth/token', {
+    api: fetch('http://54.255.201.98/oauth/token', {
       method: 'post',
       headers: {
         'Accept': 'application/json',
@@ -16,8 +16,8 @@ export function login({ email, password }) {
         username: email,
         password: password,
         grant_type: 'password',
-        client_id: 'extension',
-        client_secret: 's3cr3t',
+        client_id: 'hasbrain_tracker',
+        client_secret: 'h4sbr4in',
       }),
     }),
   };

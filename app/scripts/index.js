@@ -18,7 +18,7 @@ const store = configureStore();
 const component = (
   <Router>
     <Route name='app' component={App} setDefault>
-      <IndexRoute component={() => <div className='screen'>Loading...</div>} />
+      <IndexRoute component={() => <div className='screen'></div>} />
       <Route name='login' component={Login} />
       <Route name='home' component={Home} />
       <Route name='channel' component={Channel} />

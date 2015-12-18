@@ -32,7 +32,9 @@ class Login extends Component {
     return (
       <div className='screen'>
         <Paper className='login' zDepth={1}>
+          <img className='logo' src={require('logo-notext.png')} />
           <LoginForm status={status} onSubmit={this._handleSubmit} />
+          <p><small>hasBrain helps you improve your learning process.</small></p>
         </Paper>
       </div>
     );
