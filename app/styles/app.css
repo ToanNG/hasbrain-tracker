@@ -25,7 +25,10 @@ body {
 .footer {
   position: absolute;
   bottom: 0; left: 0;
+
+  box-sizing: border-box;
   width: 100%;
+  padding: 16px;
   color: white;
   text-align: center;
 }
@@ -52,6 +55,15 @@ body {
     height: 80px;
     margin: 16px auto;
   }
+}
+
+.activity-card {
+  position: absolute;
+  top: 50%; left: 50%;
+
+  max-width: 400px;
+
+  transform: translate(-50%,-50%);  
 }
 
 .screen-enter {

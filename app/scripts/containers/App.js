@@ -38,15 +38,12 @@ class App extends Component {
     return (
       <div>
         <ImageComponent className='wallpaper' src='http://www.wallpaperel.com/wp-content/uploads/2015/11/Flat-Wallpaper-Design-Image-B52.jpg' />
-        <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/43762/screenshots/1438974/ng-colab-space_night.gif' />
         <RouteCSSTransitionGroup transitionName='screen' transitionEnterTimeout={500} transitionLeaveTimeout={250}>
           {this.props.children}
         </RouteCSSTransitionGroup>
 
         <footer className='footer'>
-          <p>
-            <small>&copy; 2015 hasBrain</small>
-          </p>
+          <small>&copy; 2015 hasBrain</small>
         </footer>
       </div>
     );

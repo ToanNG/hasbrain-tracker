@@ -3,6 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import Paper from 'material-ui/lib/paper';
 import LoginForm from 'components/LoginForm';
+import ImageComponent from 'components/Image';
 import * as AuthActions from 'actions/auth';
 
 @connect(
@@ -31,6 +32,7 @@ class Login extends Component {
 
     return (
       <div className='screen'>
+        <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/43762/screenshots/1438974/ng-colab-space_night.gif' />
         <Paper className='login' zDepth={1}>
           <img className='logo' src={require('logo-notext.png')} />
           <LoginForm status={status} onSubmit={this._handleSubmit} />
