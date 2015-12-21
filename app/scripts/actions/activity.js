@@ -12,3 +12,7 @@ export function getTodayActivity(token) {
     }),
   };
 }
+
+// export function startActivity() {
+  
+// }

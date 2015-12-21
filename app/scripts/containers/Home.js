@@ -11,7 +11,7 @@ import CardText from 'material-ui/lib/card/card-text';
 import CardTitle from 'material-ui/lib/card/card-title';
 import FlatButton from 'material-ui/lib/flat-button';
 import ListDivider from 'material-ui/lib/lists/list-divider';
-import Snackbar from 'material-ui/lib/snackbar';
+import CountdownConfirm from 'components/CountdownConfirm';
 import * as ActivityActions from 'actions/activity';
 
 @connect(
@@ -24,15 +24,11 @@ class Home extends Component {
   }
 
   _handleClickStart = () => {
-    this.snackbar.show();
+    this.confirm.show();
   }
 
-  _handleClickUndo = () => {
-    this.snackbar.dismiss();
-  }
-
-  _handleDismissSnackbar = () => {
-    console.log('stop timer');
+  _handleCountdownEnd = () => {
+    console.log('START ACTIVITY');
   }
 
   render = () => {
@@ -68,15 +64,14 @@ class Home extends Component {
           </CardActions>
         </Card>
 
-        <Snackbar
+        <CountdownConfirm
           ref={(node) => {
-            this.snackbar = node;
+            this.confirm = node;
           }}
-          message='The activity starts after 10s'
-          action='undo'
-          autoHideDuration={0}
-          onDismiss={this._handleDismissSnackbar}
-          onActionTouchTap={this._handleClickUndo} />
+          message={'The activity starts after [count]s'}
+          action={'undo'}
+          countdown={10}
+          onCountdownEnd={this._handleCountdownEnd} />
       </div>
     );
   }
