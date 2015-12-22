@@ -16,6 +16,9 @@ export default function auth(state = INITIAL_STATE, action) {
     case GET_TODAY_ACTIVITY_FAIL:
       return state.set('todayActivity', null);
 
+    case 'START_ACTIVITY_SUCCESS':
+      return state.set('todayActivity', action.result);
+
     default:
       return state;
   }

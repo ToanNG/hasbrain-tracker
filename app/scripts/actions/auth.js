@@ -6,7 +6,7 @@ import storage from 'helpers/storage';
 export function login({ email, password }) {
   return {
     types: [LOGIN, LOGIN_SUCCESS, LOGIN_FAIL],
-    api: fetch('http://54.255.201.98/oauth/token', {
+    api: fetch('http://toan.ngrok.com/oauth/token', {
       method: 'post',
       headers: {
         'Accept': 'application/json',

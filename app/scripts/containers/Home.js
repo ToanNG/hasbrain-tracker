@@ -10,9 +10,18 @@ import CardMedia from 'material-ui/lib/card/card-media';
 import CardText from 'material-ui/lib/card/card-text';
 import CardTitle from 'material-ui/lib/card/card-title';
 import FlatButton from 'material-ui/lib/flat-button';
+import RaisedButton from 'material-ui/lib/raised-button';
 import ListDivider from 'material-ui/lib/lists/list-divider';
 import CountdownConfirm from 'components/CountdownConfirm';
 import * as ActivityActions from 'actions/activity';
+import TextField from 'material-ui/lib/text-field';
+
+const Avatar = require('material-ui/lib/avatar');
+const FontIcon = require('material-ui/lib/font-icon');
+const Colors = require('material-ui/lib/styles/colors');
+
+import Prism from 'prismjs';
+import 'prismjs/themes/prism-okaidia.css';
 
 @connect(
   mapStateToProps,
@@ -23,12 +32,27 @@ class Home extends Component {
     this.props.actions.getTodayActivity(this.props.auth.get('token'));
   }
 
+  componentDidUpdate = () => {
+    Prism.highlightAll();
+  }
+
   _handleClickStart = () => {
     this.confirm.show();
   }
 
   _handleCountdownEnd = () => {
-    console.log('START ACTIVITY');
+    this.props.actions.startActivity(this.props.auth.get('token'), this.props.activity.get('todayActivity')._id);
+  }
+
+  _handleSubmit = (e) => {
+    e.preventDefault();
+    let repoUrl = this.repoInput.getValue();
+    const {tester, storyId, no} = this.props.activity.get('todayActivity');
+    this.props.actions.submitAnswer(tester, {
+      targetRepo: repoUrl,
+      storyId,
+      activityNo: no,
+    });
   }
 
   render = () => {
@@ -37,6 +61,58 @@ class Home extends Component {
 
     if (!todayActivity) return null;
 
+    const problem1 = [
+      <ListDivider />,
+      <CardHeader
+        title='Problem'
+        subtitle='Try to solve the problem before starting the activity'
+        avatar={
+          <Avatar
+            icon={<FontIcon className='material-icons'>error</FontIcon>}
+            color={Colors.red500}
+            backgroundColor={Colors.grey100} />
+        } />,
+      <CardText dangerouslySetInnerHTML={{__html: todayActivity.problem}} />,
+    ];
+    const problem2 = [
+      <ListDivider />,
+      <CardHeader
+        title='Problem'
+        subtitle='Try to solve the problem again'
+        avatar={
+          <Avatar
+            icon={<FontIcon className='material-icons'>error</FontIcon>}
+            color={Colors.red500}
+            backgroundColor={Colors.grey100} />
+        } />,
+      <CardText dangerouslySetInnerHTML={{__html: todayActivity.problem}} />,
+      <CardText>
+        <form onSubmit={this._handleSubmit}>
+          <TextField
+            ref={node => {
+              this.repoInput = node;
+            }}
+            fullWidth={true}
+            defaultValue='git@github.com:ToanNG/sample-test.git'
+            hintText='Your git repo' />
+          <RaisedButton type='submit' label='Submit' secondary={true} />
+        </form>
+      </CardText>,
+    ];
+    const knowledge = [
+      <ListDivider />,
+      <CardHeader
+        title='Knowledge'
+        subtitle='What you need for this activity'
+        avatar={
+          <Avatar
+            icon={<FontIcon className='material-icons'>extension</FontIcon>}
+            color={Colors.lightBlue500}
+            backgroundColor={Colors.grey100} />
+        } />,
+      <CardText dangerouslySetInnerHTML={{__html: todayActivity.knowledge}} />,
+    ];
+
     return (
       <div className='screen'>
 
@@ -44,7 +120,7 @@ class Home extends Component {
           <CardMedia>
             <ImageComponent
               style={{
-                width: 400,
+                width: 592,
                 height: 120,
               }}
               src={todayActivity.course.cover.url} />
@@ -55,13 +131,23 @@ class Home extends Component {
           <CardText>
             {todayActivity.description}
           </CardText>
-          <ListDivider />
-          <CardActions>
-            <FlatButton
-              label='Learn this!'
-              primary={true}
-              onClick={this._handleClickStart} />
-          </CardActions>
+
+          {!todayActivity.startTime ? problem1 : null}
+
+          {todayActivity.startTime ? [knowledge, problem2] : null}
+
+          {
+            !todayActivity.startTime ?
+            [
+              <ListDivider />,
+              <CardActions>
+                <FlatButton
+                  label='Learn this!'
+                  primary={true}
+                  onClick={this._handleClickStart} />
+              </CardActions>,
+            ] : null
+          }
         </Card>
 
         <CountdownConfirm

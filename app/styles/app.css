@@ -7,11 +7,16 @@ body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
   font-size: 16px;
+  line-height: 1.4;
 
   h1 {
     color: var(--purple);
     padding: var(--large);
   }
+}
+
+pre[class*="language-"] {
+  margin-bottom: 1em;
 }
 
 .wallpaper {
@@ -37,6 +42,7 @@ body {
   position: absolute;
   top: 0; left: 0;
 
+  overflow: auto;
   width: 100%;
   height: 100%;
 }
@@ -58,12 +64,13 @@ body {
 }
 
 .activity-card {
-  position: absolute;
-  top: 50%; left: 50%;
+  position: relative;
+  max-width: 592px;
+  margin: 30px auto 80px;
 
-  max-width: 400px;
-
-  transform: translate(-50%,-50%);  
+  p {
+    margin-top: 0;
+  }
 }
 
 .screen-enter {
