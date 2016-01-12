@@ -13,5 +13,6 @@
     "activeTab",
     "storage",
     "http://*/*"
-  ]
+  ],
+  "content_security_policy": "script-src 'self' https://cdn.pubnub.com/pubnub-3.7.18.min.js; object-src 'self'"
 }

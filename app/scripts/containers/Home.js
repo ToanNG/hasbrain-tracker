@@ -1,27 +1,38 @@
 import React, { Component, PropTypes } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import ImageComponent from 'components/Image';
-import Card from 'material-ui/lib/card/card';
-import CardActions from 'material-ui/lib/card/card-actions';
-import CardExpandable from 'material-ui/lib/card/card-expandable';
-import CardHeader from 'material-ui/lib/card/card-header';
-import CardMedia from 'material-ui/lib/card/card-media';
-import CardText from 'material-ui/lib/card/card-text';
-import CardTitle from 'material-ui/lib/card/card-title';
-import FlatButton from 'material-ui/lib/flat-button';
-import RaisedButton from 'material-ui/lib/raised-button';
-import ListDivider from 'material-ui/lib/lists/list-divider';
-import CountdownConfirm from 'components/CountdownConfirm';
-import * as ActivityActions from 'actions/activity';
-import TextField from 'material-ui/lib/text-field';
-
-const Avatar = require('material-ui/lib/avatar');
-const FontIcon = require('material-ui/lib/font-icon');
-const Colors = require('material-ui/lib/styles/colors');
-
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-okaidia.css';
+
+import Card from 'material-ui/lib/card/card';
+import CardMedia from 'material-ui/lib/card/card-media';
+import CardTitle from 'material-ui/lib/card/card-title';
+import CardHeader from 'material-ui/lib/card/card-header';
+import CardText from 'material-ui/lib/card/card-text';
+import CardActions from 'material-ui/lib/card/card-actions';
+import FlatButton from 'material-ui/lib/flat-button';
+import ListDivider from 'material-ui/lib/lists/list-divider';
+import Avatar from 'material-ui/lib/avatar';
+import FontIcon from 'material-ui/lib/font-icon';
+import Colors from 'material-ui/lib/styles/colors';
+
+import ImageComponent from 'components/Image';
+import AnswerForm from 'components/AnswerForm';
+import CountdownConfirm from 'components/CountdownConfirm';
+import * as ActivityActions from 'actions/activity';
+
+let pubnub = PUBNUB({
+  publish_key: 'pub-c-f2f74db9-1fb1-4376-8f86-89013b0903fd',
+  subscribe_key: 'sub-c-9f9d4258-b37e-11e5-9848-0619f8945a4f',
+});
+
+console.log('Subscribing...');
+pubnub.subscribe({
+  channel: 'hasbrain_test',
+  message: function(message, env, ch, timer, magic_ch) {
+    alert(message.text);
+  },
+});
 
 @connect(
   mapStateToProps,
@@ -29,7 +40,9 @@ import 'prismjs/themes/prism-okaidia.css';
 )
 class Home extends Component {
   componentDidMount = () => {
-    this.props.actions.getTodayActivity(this.props.auth.get('token'));
+    const {auth, actions} = this.props;
+    const token = auth.get('token');
+    actions.getTodayActivity(token);
   }
 
   componentDidUpdate = () => {
@@ -41,81 +54,93 @@ class Home extends Component {
   }
 
   _handleCountdownEnd = () => {
-    this.props.actions.startActivity(this.props.auth.get('token'), this.props.activity.get('todayActivity')._id);
+    const {auth, activity, actions} = this.props;
+    const token = auth.get('token');
+    const todayActivity = activity.get('todayActivity');
+    actions.startActivity(token, todayActivity._id);
   }
 
-  _handleSubmit = (e) => {
-    e.preventDefault();
-    let repoUrl = this.repoInput.getValue();
-    const {tester, storyId, no} = this.props.activity.get('todayActivity');
-    this.props.actions.submitAnswer(tester, {
+  _handleSubmit = (repoUrl) => {
+    const {activity, actions} = this.props;
+    const todayActivity = activity.get('todayActivity');
+    actions.submitAnswer(todayActivity.tester, {
       targetRepo: repoUrl,
-      storyId,
-      activityNo: no,
+      storyId: todayActivity.storyId,
+      activityNo: todayActivity.no,
     });
   }
 
   render = () => {
-    const { activity } = this.props;
+    const {activity} = this.props;
     const todayActivity = activity.get('todayActivity');
 
     if (!todayActivity) return null;
 
-    const problem1 = [
-      <ListDivider />,
-      <CardHeader
-        title='Problem'
-        subtitle='Try to solve the problem before starting the activity'
-        avatar={
-          <Avatar
-            icon={<FontIcon className='material-icons'>error</FontIcon>}
-            color={Colors.red500}
-            backgroundColor={Colors.grey100} />
-        } />,
-      <CardText dangerouslySetInnerHTML={{__html: todayActivity.problem}} />,
-    ];
-    const problem2 = [
-      <ListDivider />,
-      <CardHeader
-        title='Problem'
-        subtitle='Try to solve the problem again'
-        avatar={
-          <Avatar
-            icon={<FontIcon className='material-icons'>error</FontIcon>}
-            color={Colors.red500}
-            backgroundColor={Colors.grey100} />
-        } />,
-      <CardText dangerouslySetInnerHTML={{__html: todayActivity.problem}} />,
-      <CardText>
-        <form onSubmit={this._handleSubmit}>
-          <TextField
-            ref={node => {
-              this.repoInput = node;
-            }}
-            fullWidth={true}
-            defaultValue='git@github.com:ToanNG/sample-test.git'
-            hintText='Your git repo' />
-          <RaisedButton type='submit' label='Submit' secondary={true} />
-        </form>
-      </CardText>,
-    ];
-    const knowledge = [
-      <ListDivider />,
-      <CardHeader
-        title='Knowledge'
-        subtitle='What you need for this activity'
-        avatar={
-          <Avatar
-            icon={<FontIcon className='material-icons'>extension</FontIcon>}
-            color={Colors.lightBlue500}
-            backgroundColor={Colors.grey100} />
-        } />,
-      <CardText dangerouslySetInnerHTML={{__html: todayActivity.knowledge}} />,
-    ];
+    const {
+      course,
+      name,
+      description,
+      problem,
+      knowledge,
+      startTime: isStarted,
+    } = todayActivity;
+    let cardContent;
+
+    if (isStarted) {
+      cardContent = <div>
+        <ListDivider />
+        <CardHeader
+          title='Knowledge'
+          subtitle='What you need to finish this activity'
+          avatar={
+            <Avatar
+              icon={<FontIcon className='material-icons'>extension</FontIcon>}
+              color={Colors.lightBlue500}
+              backgroundColor={Colors.grey100} />
+          } />
+        <CardText dangerouslySetInnerHTML={{__html: knowledge}} />
+        <ListDivider />
+        <CardHeader
+          title='Practice'
+          subtitle='Solve the problem again'
+          avatar={
+            <Avatar
+              icon={<FontIcon className='material-icons'>vpn_key</FontIcon>}
+              color={Colors.green500}
+              backgroundColor={Colors.grey100} />
+          } />
+        <CardText>
+          <div dangerouslySetInnerHTML={{__html: problem}} />
+          <AnswerForm
+            status={'idle'}
+            onSubmit={this._handleSubmit} />
+        </CardText>
+      </div>;
+    } else {
+      cardContent = <div>
+        <ListDivider />
+        <CardHeader
+          title='Problem'
+          subtitle='Try it first with all you got'
+          avatar={
+            <Avatar
+              icon={<FontIcon className='material-icons'>error</FontIcon>}
+              color={Colors.red500}
+              backgroundColor={Colors.grey100} />
+          } />
+        <CardText dangerouslySetInnerHTML={{__html: problem}} />
+        <ListDivider />
+        <CardActions>
+          <FlatButton
+            label='Learn this!'
+            primary={true}
+            onClick={this._handleClickStart} />
+        </CardActions>
+      </div>;
+    }
 
     return (
       <div className='screen'>
-
         <Card className='activity-card'>
           <CardMedia>
             <ImageComponent
@@ -123,40 +148,23 @@ class Home extends Component {
                 width: 592,
                 height: 120,
               }}
-              src={todayActivity.course.cover.url} />
+              src={course.cover.url} />
           </CardMedia>
           <CardTitle
-            title={todayActivity.name}
-            subtitle={todayActivity.course.name} />
+            title={name}
+            subtitle={course.name} />
           <CardText>
-            {todayActivity.description}
+            {description}
           </CardText>
-
-          {!todayActivity.startTime ? problem1 : null}
-
-          {todayActivity.startTime ? [knowledge, problem2] : null}
-
-          {
-            !todayActivity.startTime ?
-            [
-              <ListDivider />,
-              <CardActions>
-                <FlatButton
-                  label='Learn this!'
-                  primary={true}
-                  onClick={this._handleClickStart} />
-              </CardActions>,
-            ] : null
-          }
+          {cardContent}
         </Card>
-
         <CountdownConfirm
           ref={(node) => {
             this.confirm = node;
           }}
           message={'The activity starts after [count]s'}
           action={'undo'}
-          countdown={10}
+          countdown={5}
           onCountdownEnd={this._handleCountdownEnd} />
       </div>
     );

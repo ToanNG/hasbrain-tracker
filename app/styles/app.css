@@ -90,3 +90,9 @@ pre[class*="language-"] {
     transition: opacity 250ms ease-in;
   }
 }
+
+.hidden {
+  display: none;
+  visibility: hidden;
+  opacity: 0;
+}
