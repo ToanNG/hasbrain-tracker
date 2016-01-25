@@ -3,6 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import Paper from 'material-ui/lib/paper';
 import LoginForm from 'components/LoginForm';
+import ImageComponent from 'components/Image';
 import * as AuthActions from 'actions/auth';
 
 @connect(

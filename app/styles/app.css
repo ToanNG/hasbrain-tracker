@@ -7,11 +7,16 @@ body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
   font-size: 16px;
+  line-height: 1.4;
 
   h1 {
     color: var(--purple);
     padding: var(--large);
   }
+}
+
+pre[class*="language-"] {
+  margin-bottom: 1em;
 }
 
 .wallpaper {
@@ -25,7 +30,10 @@ body {
 .footer {
   position: absolute;
   bottom: 0; left: 0;
+
+  box-sizing: border-box;
   width: 100%;
+  padding: 16px;
   color: white;
   text-align: center;
 }
@@ -34,6 +42,7 @@ body {
   position: absolute;
   top: 0; left: 0;
 
+  overflow: auto;
   width: 100%;
   height: 100%;
 }
@@ -54,6 +63,16 @@ body {
   }
 }
 
+.activity-card {
+  position: relative;
+  max-width: 592px;
+  margin: 30px auto 80px;
+
+  p {
+    margin-top: 0;
+  }
+}
+
 .screen-enter {
   opacity: 0.01;
 
@@ -70,4 +89,10 @@ body {
     opacity: 0.01;
     transition: opacity 250ms ease-in;
   }
+}
+
+.hidden {
+  display: none;
+  visibility: hidden;
+  opacity: 0;
 }
