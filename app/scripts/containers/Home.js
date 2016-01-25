@@ -10,11 +10,13 @@ import CardTitle from 'material-ui/lib/card/card-title';
 import CardHeader from 'material-ui/lib/card/card-header';
 import CardText from 'material-ui/lib/card/card-text';
 import CardActions from 'material-ui/lib/card/card-actions';
-import FlatButton from 'material-ui/lib/flat-button';
 import ListDivider from 'material-ui/lib/lists/list-divider';
 import Avatar from 'material-ui/lib/avatar';
 import FontIcon from 'material-ui/lib/font-icon';
 import Colors from 'material-ui/lib/styles/colors';
+import Dialog from 'material-ui/lib/dialog';
+import FlatButton from 'material-ui/lib/flat-button';
+import RaisedButton from 'material-ui/lib/raised-button';
 
 import ImageComponent from 'components/Image';
 import AnswerForm from 'components/AnswerForm';
@@ -26,23 +28,28 @@ let pubnub = PUBNUB({
   subscribe_key: 'sub-c-9f9d4258-b37e-11e5-9848-0619f8945a4f',
 });
 
-console.log('Subscribing...');
-pubnub.subscribe({
-  channel: 'hasbrain_test',
-  message: function(message, env, ch, timer, magic_ch) {
-    alert(message.text);
-  },
-});
-
 @connect(
   mapStateToProps,
   mapDispatchToProps
 )
 class Home extends Component {
+  state = {
+    openDialog: false,
+    dialogMessage: null,
+  }
+
   componentDidMount = () => {
     const {auth, actions} = this.props;
     const token = auth.get('token');
     actions.getTodayActivity(token);
+
+    console.log('Subscribing...');
+    pubnub.subscribe({
+      channel: 'hasbrain_test',
+      message: (message, env, ch, timer, magic_ch) => {
+        this._handleOpenDialog(message.text);
+      },
+    });
   }
 
   componentDidUpdate = () => {
@@ -68,6 +75,14 @@ class Home extends Component {
       storyId: todayActivity.storyId,
       activityNo: todayActivity.no,
     });
+  }
+
+  _handleOpenDialog = (message) => {
+    this.setState({openDialog: true, dialogMessage: message});
+  }
+
+  _handleCloseDialog = () => {
+    this.setState({openDialog: false, dialogMessage: null});
   }
 
   render = () => {
@@ -166,6 +181,23 @@ class Home extends Component {
           action={'undo'}
           countdown={5}
           onCountdownEnd={this._handleCountdownEnd} />
+        <Dialog
+          title='Dialog With Actions'
+          actions={[
+            <FlatButton
+              label='Cancel'
+              secondary={true}
+              onTouchTap={this._handleCloseDialog} />,
+            <FlatButton
+              label='Submit'
+              primary={true}
+              keyboardFocused={true}
+              onTouchTap={this._handleCloseDialog} />,
+          ]}
+          modal={true}
+          open={this.state.openDialog}>
+          {this.state.dialogMessage}
+        </Dialog>
       </div>
     );
   }
