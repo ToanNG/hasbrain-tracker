@@ -38512,7 +38512,7 @@
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
-	var API_SERVER = 'http://localhost:3000';
+	var API_SERVER = 'http://toan.ngrok.com';
 	exports.API_SERVER = API_SERVER;
 	// export const API_SERVER = 'http://54.255.201.98';
 
@@ -43809,15 +43809,13 @@
 
 	    this._handleSubmit = function (repoUrl) {
 	      var _props3 = _this.props;
+	      var auth = _props3.auth;
 	      var activity = _props3.activity;
 	      var actions = _props3.actions;
 
+	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
-	      actions.submitAnswer(todayActivity.tester, {
-	        targetRepo: repoUrl,
-	        storyId: todayActivity.storyId,
-	        activityNo: todayActivity.no
-	      });
+	      actions.submitAnswer(token, todayActivity.storyId, repoUrl);
 	    };
 
 	    this._handleOpenDialog = function (message) {
@@ -48605,26 +48603,19 @@
 	  };
 	}
 
-	function submitAnswer(tester, _ref) {
-	  var targetRepo = _ref.targetRepo;
-	  var storyId = _ref.storyId;
-	  var activityNo = _ref.activityNo;
-
+	function submitAnswer(token, storyId, targetRepo) {
 	  return {
 	    types: [_constantsActionTypes.SUBMIT_ANSWER, _constantsActionTypes.SUBMIT_ANSWER_SUCCESS, _constantsActionTypes.SUBMIT_ANSWER_FAIL],
-	    api: fetch(_constantsActionTypes.API_SERVER + '/ci/circle/build', {
+	    api: fetch(_constantsActionTypes.API_SERVER + '/api/circle/build', {
 	      method: 'post',
 	      headers: {
 	        'Accept': 'application/json',
-	        'Content-Type': 'application/json'
+	        'Content-Type': 'application/json',
+	        'Authorization': 'Bearer ' + token
 	      },
 	      body: JSON.stringify({
-	        build_api: tester,
-	        build_parameters: {
-	          TARGET_REPO: targetRepo,
-	          STORY_ID: storyId,
-	          ACTIVITY_NO: activityNo
-	        }
+	        story: storyId,
+	        repo: targetRepo
 	      })
 	    })
 	  };
@@ -51254,7 +51245,7 @@
 	    case _constantsActionTypes.GET_TODAY_ACTIVITY_FAIL:
 	      return state.set('todayActivity', null);
 
-	    case 'START_ACTIVITY_SUCCESS':
+	    case _constantsActionTypes.START_ACTIVITY_SUCCESS:
 	      return state.set('todayActivity', action.result);
 
 	    default:

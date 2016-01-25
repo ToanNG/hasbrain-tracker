@@ -1,5 +1,5 @@
 import { List, Map } from 'immutable';
-import { GET_TODAY_ACTIVITY, GET_TODAY_ACTIVITY_SUCCESS, GET_TODAY_ACTIVITY_FAIL } from 'constants/ActionTypes';
+import { GET_TODAY_ACTIVITY, GET_TODAY_ACTIVITY_SUCCESS, GET_TODAY_ACTIVITY_FAIL, START_ACTIVITY_SUCCESS } from 'constants/ActionTypes';
 
 const INITIAL_STATE = Map({
   todayActivity: null,
@@ -16,7 +16,7 @@ export default function auth(state = INITIAL_STATE, action) {
     case GET_TODAY_ACTIVITY_FAIL:
       return state.set('todayActivity', null);
 
-    case 'START_ACTIVITY_SUCCESS':
+    case START_ACTIVITY_SUCCESS:
       return state.set('todayActivity', action.result);
 
     default:

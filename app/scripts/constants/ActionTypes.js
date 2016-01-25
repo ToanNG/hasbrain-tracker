@@ -1,4 +1,4 @@
-export const API_SERVER = 'http://localhost:3000';
+export const API_SERVER = 'http://toan.ngrok.com';
 // export const API_SERVER = 'http://54.255.201.98';
 
 export const SET_ENTRIES = 'SET_ENTRIES';

@@ -68,13 +68,10 @@ class Home extends Component {
   }
 
   _handleSubmit = (repoUrl) => {
-    const {activity, actions} = this.props;
+    const {auth, activity, actions} = this.props;
+    const token = auth.get('token');
     const todayActivity = activity.get('todayActivity');
-    actions.submitAnswer(todayActivity.tester, {
-      targetRepo: repoUrl,
-      storyId: todayActivity.storyId,
-      activityNo: todayActivity.no,
-    });
+    actions.submitAnswer(token, todayActivity.storyId, repoUrl);
   }
 
   _handleOpenDialog = (message) => {

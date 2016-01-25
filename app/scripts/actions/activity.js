@@ -41,22 +41,19 @@ export function startActivity(token, activityId) {
   };
 }
 
-export function submitAnswer(tester, {targetRepo, storyId, activityNo}) {
+export function submitAnswer(token, storyId, targetRepo) {
   return {
     types: [SUBMIT_ANSWER, SUBMIT_ANSWER_SUCCESS, SUBMIT_ANSWER_FAIL],
-    api: fetch(`${API_SERVER}/ci/circle/build`, {
+    api: fetch(`${API_SERVER}/api/circle/build`, {
       method: 'post',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        build_api: tester,
-        build_parameters: {
-          TARGET_REPO: targetRepo,
-          STORY_ID: storyId,
-          ACTIVITY_NO: activityNo,
-        },
+        story: storyId,
+        repo: targetRepo,
       }),
     }),
   };
