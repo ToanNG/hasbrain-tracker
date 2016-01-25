@@ -43772,12 +43772,7 @@
 	    };
 
 	    this.componentDidMount = function () {
-	      var _props = _this.props;
-	      var auth = _props.auth;
-	      var actions = _props.actions;
-
-	      var token = auth.get('token');
-	      actions.getTodayActivity(token);
+	      _this._getTodayActivity();
 
 	      console.log('Subscribing...');
 	      pubnub.subscribe({
@@ -43790,6 +43785,15 @@
 
 	    this.componentDidUpdate = function () {
 	      _prismjs2['default'].highlightAll();
+	    };
+
+	    this._getTodayActivity = function () {
+	      var _props = _this.props;
+	      var auth = _props.auth;
+	      var actions = _props.actions;
+
+	      var token = auth.get('token');
+	      actions.getTodayActivity(token);
 	    };
 
 	    this._handleClickStart = function () {
@@ -43823,6 +43827,7 @@
 	    };
 
 	    this._handleCloseDialog = function () {
+	      _this._getTodayActivity();
 	      _this.setState({ openDialog: false, dialogMessage: null });
 	    };
 
@@ -43830,6 +43835,7 @@
 	      var activity = _this.props.activity;
 
 	      var todayActivity = activity.get('todayActivity');
+	      var isSubmitting = activity.get('isSubmitting');
 
 	      if (!todayActivity) return null;
 
@@ -43876,7 +43882,7 @@
 	            null,
 	            _react2['default'].createElement('div', { dangerouslySetInnerHTML: { __html: problem } }),
 	            _react2['default'].createElement(_componentsAnswerForm2['default'], {
-	              status: 'idle',
+	              status: isSubmitting ? 'pending' : 'idle',
 	              onSubmit: _this._handleSubmit })
 	          )
 	        );
@@ -48009,27 +48015,24 @@
 	          style: {
 	            marginRight: 16
 	          } }),
-	        _react2['default'].createElement(
-	          _materialUiLibRaisedButton2['default'],
-	          {
-	            disabled: disabled,
-	            secondary: true,
-	            type: 'submit',
-	            label: buttonText,
-	            labelPosition: 'after',
-	            style: {
-	              minWidth: buttonWidth
-	            } },
-	          _react2['default'].createElement(GithubIcon, {
-	            color: 'white',
-	            style: {
-	              verticalAlign: 'middle',
-	              display: 'inline-block',
-	              marginLeft: 12,
-	              marginRight: -8
-	            } })
-	        )
+	        _react2['default'].createElement(_materialUiLibRaisedButton2['default'], {
+	          disabled: disabled,
+	          secondary: true,
+	          type: 'submit',
+	          label: buttonText,
+	          labelPosition: 'after',
+	          style: {
+	            minWidth: buttonWidth
+	          } })
 	      );
+	      // <GithubIcon
+	      //   color='white'
+	      //   style={{
+	      //     verticalAlign: 'middle',
+	      //     display: 'inline-block',
+	      //     marginLeft: 12,
+	      //     marginRight: -8,
+	      //   }} />
 	    };
 	  }
 
@@ -51229,7 +51232,8 @@
 	var _constantsActionTypes = __webpack_require__(490);
 
 	var INITIAL_STATE = (0, _immutable.Map)({
-	  todayActivity: null
+	  todayActivity: null,
+	  isSubmitting: false
 	});
 
 	function auth(state, action) {
@@ -51237,7 +51241,7 @@
 
 	  switch (action.type) {
 	    case _constantsActionTypes.GET_TODAY_ACTIVITY:
-	      return state;
+	      return state.set('isSubmitting', false);
 
 	    case _constantsActionTypes.GET_TODAY_ACTIVITY_SUCCESS:
 	      return state.set('todayActivity', action.result);
@@ -51247,6 +51251,12 @@
 
 	    case _constantsActionTypes.START_ACTIVITY_SUCCESS:
 	      return state.set('todayActivity', action.result);
+
+	    case _constantsActionTypes.SUBMIT_ANSWER:
+	      return state.set('isSubmitting', true);
+
+	    case _constantsActionTypes.SUBMIT_ANSWER_FAIL:
+	      return state.set('isSubmitting', false);
 
 	    default:
 	      return state;

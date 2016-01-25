@@ -62,17 +62,17 @@ class AnswerForm extends Component {
           style={{
             minWidth: buttonWidth,
           }}>
-          <GithubIcon
-            color='white'
-            style={{
-              verticalAlign: 'middle',
-              display: 'inline-block',
-              marginLeft: 12,
-              marginRight: -8,
-            }} />
         </RaisedButton>
       </form>
     );
+    // <GithubIcon
+    //   color='white'
+    //   style={{
+    //     verticalAlign: 'middle',
+    //     display: 'inline-block',
+    //     marginLeft: 12,
+    //     marginRight: -8,
+    //   }} />
   }
 }
 

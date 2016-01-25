@@ -39,9 +39,7 @@ class Home extends Component {
   }
 
   componentDidMount = () => {
-    const {auth, actions} = this.props;
-    const token = auth.get('token');
-    actions.getTodayActivity(token);
+    this._getTodayActivity();
 
     console.log('Subscribing...');
     pubnub.subscribe({
@@ -54,6 +52,12 @@ class Home extends Component {
 
   componentDidUpdate = () => {
     Prism.highlightAll();
+  }
+
+  _getTodayActivity = () => {
+    const {auth, actions} = this.props;
+    const token = auth.get('token');
+    actions.getTodayActivity(token);
   }
 
   _handleClickStart = () => {
@@ -79,12 +83,14 @@ class Home extends Component {
   }
 
   _handleCloseDialog = () => {
+    this._getTodayActivity();
     this.setState({openDialog: false, dialogMessage: null});
   }
 
   render = () => {
     const {activity} = this.props;
     const todayActivity = activity.get('todayActivity');
+    const isSubmitting = activity.get('isSubmitting');
 
     if (!todayActivity) return null;
 
@@ -124,7 +130,7 @@ class Home extends Component {
         <CardText>
           <div dangerouslySetInnerHTML={{__html: problem}} />
           <AnswerForm
-            status={'idle'}
+            status={isSubmitting ? 'pending' : 'idle'}
             onSubmit={this._handleSubmit} />
         </CardText>
       </div>;
