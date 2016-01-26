@@ -1,14 +1,10 @@
 import React from 'react';
 import { render } from 'react-dom';
 import { Provider } from 'react-redux';
-import { createDevTools } from 'redux-devtools';
-import LogMonitor from 'redux-devtools-log-monitor';
-import DockMonitor from 'redux-devtools-dock-monitor';
 import { Router, Route, IndexRoute } from 'containers/Router';
 import App from 'containers/App';
 import Login from 'containers/Login';
 import Home from 'containers/Home';
-import Channel from 'containers/Channel';
 import configureStore from 'store/configureStore';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 import 'loaders.css/loaders.min.css';
@@ -24,7 +20,6 @@ const component = (
       <IndexRoute component={() => <div className='screen'></div>} />
       <Route name='login' component={Login} />
       <Route name='home' component={Home} />
-      <Route name='channel' component={Channel} />
     </Route>
   </Router>
 );
