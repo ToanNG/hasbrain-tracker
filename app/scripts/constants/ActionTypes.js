@@ -1,5 +1,5 @@
-export const API_SERVER = 'http://toan.ngrok.com';
-// export const API_SERVER = 'http://54.255.201.98';
+// export const API_SERVER = 'http://toan.ngrok.com';
+export const API_SERVER = 'http://54.255.201.98';
 
 export const LOGIN = 'LOGIN';
 export const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
@@ -11,6 +11,10 @@ export const RETRIEVE_TOKEN_FAIL = 'RETRIEVE_TOKEN_FAIL';
 export const SET_TOKEN = 'SET_TOKEN';
 export const SET_TOKEN_SUCCESS = 'SET_TOKEN_SUCCESS';
 export const SET_TOKEN_FAIL = 'SET_TOKEN_FAIL';
+
+export const GET_USER = 'GET_USER';
+export const GET_USER_SUCCESS = 'GET_USER_SUCCESS';
+export const GET_USER_FAIL = 'GET_USER_FAIL';
 
 export const GET_TODAY_ACTIVITY = 'GET_TODAY_ACTIVITY';
 export const GET_TODAY_ACTIVITY_SUCCESS = 'GET_TODAY_ACTIVITY_SUCCESS';

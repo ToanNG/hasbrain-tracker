@@ -22,6 +22,7 @@ import ImageComponent from 'components/Image';
 import AnswerForm from 'components/AnswerForm';
 import CountdownConfirm from 'components/CountdownConfirm';
 import * as ActivityActions from 'actions/activity';
+import * as UserActions from 'actions/user';
 
 let pubnub = PUBNUB({
   publish_key: 'pub-c-f2f74db9-1fb1-4376-8f86-89013b0903fd',
@@ -40,24 +41,38 @@ class Home extends Component {
 
   componentDidMount = () => {
     this._getTodayActivity();
-
-    console.log('Subscribing...');
-    pubnub.subscribe({
-      channel: 'hasbrain_test',
-      message: (message, env, ch, timer, magic_ch) => {
-        this._handleOpenDialog(message.text);
-      },
-    });
+    this._getUser();
   }
 
   componentDidUpdate = () => {
     Prism.highlightAll();
   }
 
+  componentWillReceiveProps = (nextProps) => {
+    const thisUser = this.props.user.get('currentUser');
+    const nextUser = nextProps.user.get('currentUser');
+
+    if (nextUser !== thisUser && nextUser) {
+      console.log(`Subscribing to channel hasbrain_test_${nextUser._id}...`);
+      pubnub.subscribe({
+        channel: `hasbrain_test_${nextUser._id}`,
+        message: (message, env, ch, timer, magic_ch) => {
+          this._handleOpenDialog(message.text);
+        },
+      });
+    }
+  }
+
   _getTodayActivity = () => {
     const {auth, actions} = this.props;
     const token = auth.get('token');
     actions.getTodayActivity(token);
+  }
+
+  _getUser = () => {
+    const {auth, userActions} = this.props;
+    const token = auth.get('token');
+    userActions.getUser(token); 
   }
 
   _handleClickStart = () => {
@@ -88,11 +103,12 @@ class Home extends Component {
   }
 
   render = () => {
-    const {activity} = this.props;
+    const {activity, user} = this.props;
     const todayActivity = activity.get('todayActivity');
     const isSubmitting = activity.get('isSubmitting');
+    const currentUser = user.get('currentUser');
 
-    if (!todayActivity) return null;
+    if (!todayActivity || !currentUser) return null;
 
     const {
       course,
@@ -210,12 +226,14 @@ function mapStateToProps(state) {
   return {
     activity: state.activity,
     auth: state.auth,
+    user: state.user,
   };
 }
 
 function mapDispatchToProps(dispatch) {
   return {
     actions: bindActionCreators(ActivityActions, dispatch),
+    userActions: bindActionCreators(UserActions, dispatch),
   };
 }
 

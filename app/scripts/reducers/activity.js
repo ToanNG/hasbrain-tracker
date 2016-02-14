@@ -14,7 +14,7 @@ const INITIAL_STATE = Map({
   isSubmitting: false,
 });
 
-export default function auth(state = INITIAL_STATE, action) {
+export default function activity(state = INITIAL_STATE, action) {
   switch (action.type) {
     case GET_TODAY_ACTIVITY:
       return state.set('isSubmitting', false);
