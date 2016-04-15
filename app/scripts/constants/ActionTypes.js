@@ -1,5 +1,5 @@
-// export const API_SERVER = 'http://toan.ngrok.com';
-export const API_SERVER = 'http://54.255.201.98';
+export const API_SERVER = 'http://localhost:3000';
+// export const API_SERVER = 'http://52.74.99.100';
 
 export const LOGIN = 'LOGIN';
 export const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
@@ -25,3 +25,7 @@ export const START_ACTIVITY_FAIL = 'START_ACTIVITY_FAIL';
 export const SUBMIT_ANSWER = 'SUBMIT_ANSWER';
 export const SUBMIT_ANSWER_SUCCESS = 'SUBMIT_ANSWER_SUCCESS';
 export const SUBMIT_ANSWER_FAIL = 'SUBMIT_ANSWER_FAIL';
+
+export const EXCHANGE_GITHUB_TOKEN = 'EXCHANGE_GITHUB_TOKEN';
+export const EXCHANGE_GITHUB_TOKEN_SUCCESS = 'EXCHANGE_GITHUB_TOKEN_SUCCESS';
+export const EXCHANGE_GITHUB_TOKEN_FAIL = 'EXCHANGE_GITHUB_TOKEN_FAIL';

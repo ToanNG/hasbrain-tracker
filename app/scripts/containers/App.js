@@ -37,7 +37,6 @@ class App extends Component {
   render = () => {
     return (
       <div>
-        <ImageComponent className='wallpaper' src='https://images.unsplash.com/photo-1428535172630-fb1c050ac3e0?crop=entropy&fit=crop&fm=jpg&h=750&ixjsv=2.1.0&ixlib=rb-0.3.5&q=80&w=1450' />
         <RouteCSSTransitionGroup transitionName='screen' transitionEnterTimeout={500} transitionLeaveTimeout={250}>
           {this.props.children}
         </RouteCSSTransitionGroup>

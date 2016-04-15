@@ -111,6 +111,7 @@ class Home extends Component {
     if (!todayActivity || !currentUser) return null;
 
     const {
+      company,
       course,
       name,
       description,
@@ -154,8 +155,12 @@ class Home extends Component {
       cardContent = <div>
         <ListDivider />
         <CardHeader
-          title='Problem'
-          subtitle='Try it first with all you got'
+          title='Challenge'
+          subtitle={
+            <span>
+              Contributed by <a href={`mailto:${company.email}`}>{company.name}</a>
+            </span>
+          }
           avatar={
             <Avatar
               icon={<FontIcon className='material-icons'>error</FontIcon>}

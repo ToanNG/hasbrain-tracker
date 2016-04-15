@@ -52,14 +52,19 @@ pre[class*="language-"] {
   top: 50%; left: 50%;
 
   max-width: 280px;
+  margin-top: -253px;
+  margin-left: -140px;
   padding: 16px;
-
-  transform: translate(-50%,-50%);
 
   .logo {
     display: block;
     height: 80px;
     margin: 16px auto;
+  }
+
+  .or {
+    margin: 2px 0;
+    text-align: center;
   }
 }
 
@@ -95,4 +100,8 @@ pre[class*="language-"] {
   display: none;
   visibility: hidden;
   opacity: 0;
+}
+
+.text-center {
+  text-align: center;
 }

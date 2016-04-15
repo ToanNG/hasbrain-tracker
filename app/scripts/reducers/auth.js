@@ -1,5 +1,16 @@
 import { List, Map } from 'immutable';
-import { LOGIN, LOGIN_SUCCESS, LOGIN_FAIL, LOGOUT, RETRIEVE_TOKEN, RETRIEVE_TOKEN_SUCCESS, RETRIEVE_TOKEN_FAIL } from 'constants/ActionTypes';
+import {
+  LOGIN,
+  LOGIN_SUCCESS,
+  LOGIN_FAIL,
+  LOGOUT,
+  RETRIEVE_TOKEN,
+  RETRIEVE_TOKEN_SUCCESS,
+  RETRIEVE_TOKEN_FAIL,
+  EXCHANGE_GITHUB_TOKEN,
+  EXCHANGE_GITHUB_TOKEN_SUCCESS,
+  EXCHANGE_GITHUB_TOKEN_FAIL
+} from 'constants/ActionTypes';
 
 const INITIAL_STATE = Map({
   isLoggingIn: undefined,
@@ -49,6 +60,10 @@ export default function auth(state = INITIAL_STATE, action) {
         isLoggedIn: false,
         token: null,
       });
+
+    case EXCHANGE_GITHUB_TOKEN_SUCCESS:
+      console.log(action.result)
+      return state;
 
     default:
       return state;

@@ -12,6 +12,9 @@ import {
   SET_TOKEN,
   SET_TOKEN_SUCCESS,
   SET_TOKEN_FAIL,
+  EXCHANGE_GITHUB_TOKEN,
+  EXCHANGE_GITHUB_TOKEN_SUCCESS,
+  EXCHANGE_GITHUB_TOKEN_FAIL
 } from 'constants/ActionTypes';
 import storage from 'helpers/storage';
 
@@ -51,4 +54,38 @@ export function setToken(token) {
     types: [SET_TOKEN, SET_TOKEN_SUCCESS, SET_TOKEN_FAIL],
     promise: storage.set({token}),
   };
+}
+
+export function exchangeGithubToken({ code }) {
+  return dispatch => {
+    fetch(`${API_SERVER}/github/exchange-token`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code
+      }),
+    })
+    .then(response => response.json())
+    .then(result => dispatch(login({
+      email: 'user.github@hasbrain.com',
+      password: JSON.parse(result).access_token
+    })))
+  };
+
+  // return {
+  //   types: [EXCHANGE_GITHUB_TOKEN, EXCHANGE_GITHUB_TOKEN_SUCCESS, EXCHANGE_GITHUB_TOKEN_FAIL],
+  //   api: fetch(`${API_SERVER}/github/exchange-token`, {
+  //     method: 'post',
+  //     headers: {
+  //       'Accept': 'application/json',
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify({
+  //       code
+  //     }),
+  //   }),
+  // };
 }
