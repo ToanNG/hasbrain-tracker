@@ -157,9 +157,9 @@ class Home extends Component {
         <CardHeader
           title='Challenge'
           subtitle={
-            <span>
-              Contributed by <a href={`mailto:${company.email}`}>{company.name}</a>
-            </span>
+            company
+            ? <span>Contributed by <a href={`mailto:${company.email}`}>{company.name}</a></span>
+            : 'Try it first with all you got'
           }
           avatar={
             <Avatar

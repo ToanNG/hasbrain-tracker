@@ -38077,7 +38077,7 @@
 	          _react2['default'].createElement(_materialUiLibListsListDivider2['default'], null),
 	          _react2['default'].createElement(_materialUiLibCardCardHeader2['default'], {
 	            title: 'Challenge',
-	            subtitle: _react2['default'].createElement(
+	            subtitle: company ? _react2['default'].createElement(
 	              'span',
 	              null,
 	              'Contributed by ',
@@ -38086,7 +38086,7 @@
 	                { href: 'mailto:' + company.email },
 	                company.name
 	              )
-	            ),
+	            ) : 'Try it first with all you got',
 	            avatar: _react2['default'].createElement(_materialUiLibAvatar2['default'], {
 	              icon: _react2['default'].createElement(
 	                _materialUiLibFontIcon2['default'],
