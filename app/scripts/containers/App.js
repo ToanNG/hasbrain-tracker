@@ -22,14 +22,21 @@ class App extends Component {
   }
 
   componentWillReceiveProps = (nextProps, nextContext) => {
-    const {switchTo, actions} = this.props;
+    const { auth: thisAuth, user: thisUser, switchTo, actions} = this.props;
+    const { auth: nextAuth, user: nextUser } = nextProps;
 
-    if (this.props.auth.get('isLoggedIn') !== nextProps.auth.get('isLoggedIn')) {
-      if (nextProps.auth.get('isLoggedIn')) {
-        actions.setToken(nextProps.auth.get('token'));
+    if (thisAuth.get('isLoggedIn') !== nextAuth.get('isLoggedIn')) {
+      if (nextAuth.get('isLoggedIn')) {
+        actions.setToken(nextAuth.get('token'));
         switchTo('home');
       } else {
         switchTo('login');
+      }
+    }
+
+    if (thisUser.get('currentUser') !== nextUser.get('currentUser')) {
+      if (!nextUser.get('currentUser').enrollments) {
+        switchTo('enroll');
       }
     }
   }
@@ -52,6 +59,7 @@ class App extends Component {
 function mapStateToProps(state) {
   return {
     auth: state.auth,
+    user: state.user
   };
 }
 

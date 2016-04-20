@@ -12,9 +12,6 @@ import {
   SET_TOKEN,
   SET_TOKEN_SUCCESS,
   SET_TOKEN_FAIL,
-  EXCHANGE_GITHUB_TOKEN,
-  EXCHANGE_GITHUB_TOKEN_SUCCESS,
-  EXCHANGE_GITHUB_TOKEN_FAIL
 } from 'constants/ActionTypes';
 import storage from 'helpers/storage';
 
@@ -74,18 +71,4 @@ export function exchangeGithubToken({ code }) {
       password: JSON.parse(result).access_token
     })))
   };
-
-  // return {
-  //   types: [EXCHANGE_GITHUB_TOKEN, EXCHANGE_GITHUB_TOKEN_SUCCESS, EXCHANGE_GITHUB_TOKEN_FAIL],
-  //   api: fetch(`${API_SERVER}/github/exchange-token`, {
-  //     method: 'post',
-  //     headers: {
-  //       'Accept': 'application/json',
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: JSON.stringify({
-  //       code
-  //     }),
-  //   }),
-  // };
 }

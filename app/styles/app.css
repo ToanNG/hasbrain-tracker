@@ -68,6 +68,22 @@ pre[class*="language-"] {
   }
 }
 
+.enroll {
+  position: absolute;
+  top: 50%; left: 50%;
+
+  width: 280px;
+  margin-top: -253px;
+  margin-left: -140px;
+  padding: 16px;
+
+  h2 {
+    margin-top: 8px;
+    font-weight: 400;
+    text-align: center;
+  }
+}
+
 .activity-card {
   position: relative;
   max-width: 592px;
