@@ -112,7 +112,7 @@ class Home extends Component {
 
     const {
       company,
-      course,
+      parent: course,
       name,
       description,
       problem,

@@ -1,10 +1,13 @@
 import React, { Component, PropTypes } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { Map } from 'immutable';
+
 import Paper from 'material-ui/lib/paper';
-import RadioButton from 'material-ui/lib/radio-button';
-import RadioButtonGroup from 'material-ui/lib/radio-button-group';
-import RaisedButton from 'material-ui/lib/raised-button';
+import List from 'material-ui/lib/lists/list';
+import ListItem from 'material-ui/lib/lists/list-item';
+import Dialog from 'material-ui/lib/dialog';
+import FlatButton from 'material-ui/lib/flat-button';
 import ImageComponent from 'components/Image';
 import * as EnrollmentActions from 'actions/enrollment';
 import * as LearningPathActions from 'actions/learningPath';
@@ -22,7 +25,8 @@ class Enroll extends Component {
   }
 
   state = {
-    selectedPath: null
+    openDialog: false,
+    selectedPath: Map()
   }
 
   componentDidMount = () => {
@@ -35,8 +39,9 @@ class Enroll extends Component {
     pathActions.getLearningPaths(token);
   }
 
-  _handleChange = (e, value) => {
+  _handleTouchTap = (value, e) => {
     this.setState({
+      openDialog: true,
       selectedPath: value
     });
   }
@@ -44,41 +49,61 @@ class Enroll extends Component {
   _handleSubmit = () => {
     const {auth, enrollmentActions} = this.props;
     const token = auth.get('token');
-    enrollmentActions.enroll(token, this.state.selectedPath);
+    enrollmentActions.enroll(token, this.state.selectedPath.get('_id'));
+  }
+
+  _handleClose = () => {
+    this.setState({
+      openDialog: false
+    });
   }
 
   render = () => {
-    const styles = {
-      radioButton: {
-        marginLeft: 8,
-        marginBottom: 16
-      },
-    };
+    const { openDialog, selectedPath } = this.state;
+    const { learningPath } = this.props;
+    const actions = [
+      <FlatButton
+        label='Cancel'
+        secondary={true}
+        onTouchTap={this._handleClose}
+      />,
+      <FlatButton
+        label={`Pick ${selectedPath.get('name')}`}
+        primary={true}
+        keyboardFocused={true}
+        onTouchTap={this._handleSubmit}
+      />
+    ];
 
     return (
       <div className='screen'>
         <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/43762/screenshots/1438974/ng-colab-space_night.gif' />
         <Paper className='enroll' zDepth={1}>
-          <h2>Select your path</h2>
-          <RadioButtonGroup
-            name='path'
-            onChange={this._handleChange}
-          >
-            {this.props.learningPath.get('paths').map(path =>
-              <RadioButton
-                value={path.get('_id')}
-                label={path.get('name')}
-                style={styles.radioButton}
+          <h2>Pick your path</h2>
+          <List>
+            {learningPath.get('paths').map(path =>
+              <ListItem
+                primaryText={path.get('name')}
+                onTouchTap={this._handleTouchTap.bind(null, path)}
               />
             )}
-          </RadioButtonGroup>
-          <RaisedButton
-            fullWidth={true}
-            secondary={true}
-            label='Submit'
-            onTouchTap={this._handleSubmit}
-          />
+          </List>
         </Paper>
+
+        <Dialog
+          actions={actions}
+          modal={false}
+          open={openDialog}
+          onRequestClose={this._handleClose}
+        >
+          <iframe
+            width='100%'
+            height='480'
+            src={`https://coggle.it/diagram/${selectedPath.get('diagram')}`}
+            frameBorder='0'
+            allowFullScreen=''
+          />
+        </Dialog>
       </div>
     );
   }
