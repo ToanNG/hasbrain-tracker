@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "babel": "^6.0.2",
+    "d3": "^3.5.17",
     "es6-promise": "^3.0.2",
     "history": "^1.13.1",
     "immutable": "^3.7.5",

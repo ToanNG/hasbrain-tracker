@@ -189,7 +189,7 @@ class Home extends Component {
                   width: 592,
                   height: 120,
                 }}
-                src={course.cover.url} />
+                src={course.cover && course.cover.url} />
             </CardMedia>
             <CardTitle
               title={name}
