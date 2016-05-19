@@ -62,6 +62,7 @@ class Enroll extends Component {
 
   drawTree = (value) => {
     var treeData = {
+      "_id" : value.get('_id'),
       "name":value.get('name'), // root name
       "children" : JSON.parse(value.get('nodeTree'))
     };

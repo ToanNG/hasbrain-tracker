@@ -38367,7 +38367,11 @@
 	        };
 
 	        this.drawTree = function (value) {
-	            var treeData = { "name": value.get('name'), "children": JSON.parse(value.get('nodeTree')) };
+	            var treeData = {
+	                "_id": value.get('_id'),
+	                "name": value.get('name'), // root name
+	                "children": JSON.parse(value.get('nodeTree'))
+	            };
 
 	            // Calculate total nodes, max label length
 	            var totalNodes = 0;
