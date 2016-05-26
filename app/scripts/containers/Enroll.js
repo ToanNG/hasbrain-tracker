@@ -44,7 +44,9 @@ class Enroll extends Component {
       openDialog: true,
       selectedPath: value
     }, () => {
-      this.drawTree(value);
+        if(value && value.get('nodeTree')){
+            this.drawTree(value);
+        }
     });
   }
 
@@ -145,9 +147,9 @@ class Enroll extends Component {
     // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
 
     function centerNode(source) {
-        scale = zoomListener.scale();
-        x = -source.y0;
-        y = -source.x0;
+        var scale = zoomListener.scale();
+        var x = -source.y0;
+        var y = -source.x0;
         x = x * scale + viewerWidth / 2;
         y = y * scale + viewerHeight / 2;
         d3.select('g').transition()
@@ -354,6 +356,7 @@ class Enroll extends Component {
           <List>
             {learningPath.get('paths').map(path =>
               <ListItem
+                key={path.get('_id')}
                 primaryText={path.get('name')}
                 onTouchTap={this._handleTouchTap.bind(null, path)}
               />

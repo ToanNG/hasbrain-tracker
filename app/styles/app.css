@@ -36,6 +36,10 @@ pre[class*="language-"] {
   padding: 16px;
   color: white;
   text-align: center;
+  button{
+    float:right;
+    padding: 10px 20px;
+  }
 }
 
 .screen {
