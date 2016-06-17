@@ -63,6 +63,9 @@ class Enroll extends Component {
   }
 
   drawTree = (value) => {
+    const {auth, enrollmentActions} = this.props;
+    var that = this;
+
     var treeData = {
       "_id" : value.get('_id'),
       "name":value.get('name'), // root name
@@ -159,14 +162,14 @@ class Enroll extends Component {
         zoomListener.translate([x, y]);
     }
 
-    // Toggle children on click.
-    function callback(nodeID){
-        console.log(nodeID);
-    }
-
-    function click(d) {
-        if (d3.event.defaultPrevented) return; // click suppressed
-        callback(d._id);
+    function click(node) {
+        if (d3.event.defaultPrevented) return;
+        if(node.dependency && node.dependency.length > 0){
+            console.log('Does not meet the requirements!');
+        } else {
+            const token = auth.get('token');
+            enrollmentActions.enroll(token, that.state.selectedPath.get('_id'), node._id);
+        }
     }
 
     function update(source) {
@@ -239,25 +242,11 @@ class Enroll extends Component {
             })
             .style("fill-opacity", 0);
 
-        // phantom node to give us mouseover in a radius around it
-        nodeEnter.append("circle")
-            .attr('class', 'ghostCircle')
-            .attr("r", 30)
-            .attr("opacity", 0.2) // change this to zero to hide the target area
-        .style("fill", "red")
-            .attr('pointer-events', 'mouseover')
-            .on("mouseover", function(node) {
-                overCircle(node);
-            })
-            .on("mouseout", function(node) {
-                outCircle(node);
-            });
-
         // Change the circle fill depending on whether it has children and is collapsed
         node.select("circle.nodeCircle")
             .attr("r", 4.5)
             .style("fill", function(d) {
-                return d._children ? "lightsteelblue" : "#fff";
+                return (d.dependency && d.dependency.length > 0) ? "#CCC" : "#fff";
             });
 
         // Transition nodes to their new position.

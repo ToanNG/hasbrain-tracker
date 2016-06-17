@@ -24,6 +24,23 @@ export function getTodayActivity(token) {
   };
 }
 
+export function giveUpActivity(token, activityId) {
+  return {
+    types: ['GIVE_UP_ACTIVITY', 'GIVE_UP_ACTIVITY_SUCCESS', 'GIVE_UP_ACTIVITY_FAIL'],
+    api: fetch(`${API_SERVER}/api/story/giveup`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        activity: activityId,
+      }),
+    }),
+  };
+}
+
 export function startActivity(token, activityId) {
   return {
     types: [START_ACTIVITY, START_ACTIVITY_SUCCESS, START_ACTIVITY_FAIL],
