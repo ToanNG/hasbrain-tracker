@@ -25,6 +25,7 @@ import CountdownConfirm from 'components/CountdownConfirm';
 import * as ActivityActions from 'actions/activity';
 import * as UserActions from 'actions/user';
 import * as StoryActions from 'actions/story';
+import * as LearningPathActions from 'actions/learningPath';
 
 let pubnub = PUBNUB({
   publish_key: 'pub-c-f2f74db9-1fb1-4376-8f86-89013b0903fd',
@@ -40,6 +41,7 @@ class Home extends Component {
     openDialog: false,
     openShowMapDialog: false,
     openGiveUpDialog: false,
+    openSelectAnotherNode: false,
     dialogMessage: null,
   }
 
@@ -47,6 +49,7 @@ class Home extends Component {
     this._getTodayActivity();
     this._getUser();
     this._getStory();
+    this._getLearningPath();
   }
 
   componentDidUpdate = () => {
@@ -66,6 +69,13 @@ class Home extends Component {
         },
       });
     }
+
+    const thisPath = this.props.learningPath.get('path');
+    const nextPath = nextProps.learningPath.get('path');
+    const enrollment = nextProps.user.get('currentUser').enrollments;
+    if(nextPath !== thisPath && nextPath && enrollment) {
+      this._showMap();
+    }
   }
 
   _getTodayActivity = () => {
@@ -84,6 +94,12 @@ class Home extends Component {
     const {auth, storyActions} = this.props;
     const token = auth.get('token');
     storyActions.getCompleteStory(token);
+  }
+
+  _getLearningPath = () => {
+    const {auth, learningPathActions} = this.props;
+    const token = auth.get('token');
+    learningPathActions.getLearningPath(token);
   }
 
   _handleClickStart = () => {
@@ -114,23 +130,20 @@ class Home extends Component {
   }
 
   _showMap = () => {
-    const { story, user, auth, actions, activity } = this.props;
-    const completedActivityArr = story.get('stories').map(function(story){
+    const { story, auth, actions, activity, user } = this.props;
+    const completedActivityArr = story.get('stories') ? story.get('stories').map(function(story){
       return story.activity._id;
-    });
+    }) : [];
+
+    const currentUser = user.get('currentUser').enrollments[0] ? user.get('currentUser').enrollments[0] : { _id : 0, name : '', children : null};
 
     var treeData = {
-      "_id" : user.get('currentUser').enrollments[0].learningPath._id,
-      "name": user.get('currentUser').enrollments[0].learningPath.name, // root name
-      "children" : JSON.parse(user.get('currentUser').enrollments[0].learningPath.nodeTree)
+      "_id" : currentUser.learningPath._id,
+      "name": currentUser.learningPath.name, // root name
+      "children" : JSON.parse(currentUser.learningPath.nodeTree)
     };
 
-    console.log(user.get('currentUser'));
-
     var completedNodes = [];
-
-    // Calculate total nodes, max label length
-    var totalNodes = 0;
     var maxLabelLength = 0;
     // Misc. variables
     var i = 0;
@@ -177,7 +190,6 @@ class Home extends Component {
 
     // Call visit function to establish maxLabelLength
     visit(treeData, function(d) {
-        totalNodes++;
         maxLabelLength = Math.max(d.name.length, maxLabelLength);
 
         d.nodeType = d.nodeType;
@@ -226,7 +238,8 @@ class Home extends Component {
 
 
     // define the baseSvg, attaching a class for styling and the zoomListener
-    var baseSvg = d3.select("#learning-tree").append("svg")
+    d3.select("svg").remove();
+    var baseSvg = d3.select("#learning-tree").insert("svg")
         .attr("width", viewerWidth)
         .attr("height", viewerHeight)
         .attr("class", "overlay")
@@ -247,11 +260,18 @@ class Home extends Component {
     }
 
     function click(d) {
+      console.log('clicked');
       if (d3.event.defaultPrevented) return; // click suppressed
       const todayActivity = activity.get('todayActivity');
-      const { startTime: isStarted } = todayActivity;
-      if(!isStarted && !d.isComplete && d.nodeType === 'activity') {
-        var flag = true;
+      var flag = true;
+      if(todayActivity) {
+        const { startTime: isStarted } = todayActivity;
+        if(isStarted) {
+          flag = false;
+        }
+      }
+
+      if(!d.isComplete && d.nodeType === 'activity') {
         if(d.dependency && d.dependency.length > 0){
           d.dependency.map(function(id){
             if(completedNodes.indexOf(id) === -1){
@@ -261,12 +281,12 @@ class Home extends Component {
             }
           });
         }
-        if(flag){
-          console.log('StartActivity');
-          const token = auth.get('token');
-          actions.startActivity(token, d._id);
-          that.setState({ openShowMapDialog: false });
-        }
+      }
+      
+      if(flag){
+        const token = auth.get('token');
+        actions.createActivity(token, d._id);
+        that.setState({ openShowMapDialog: false, openSelectAnotherNode : false });
       }
     }
 
@@ -325,15 +345,15 @@ class Home extends Component {
 
         nodeEnter.append("text")
             .attr("x", function(d) {
-                return d.children || d.children ? 10 : 10;
+                return d.children || d._children ? 10 : 10;
             })
             .attr("y", function(d) {
-                return d.children || d.children ? -10 : 0;
+                return d.children || d._children ? -10 : 0;
             })
             .attr("dy", ".35em")
             .attr('class', 'nodeText')
             .attr("text-anchor", function(d) {
-                return d.children || d.children ? "end" : "start";
+                return d.children || d._children ? "end" : "start";
             })
             .text(function(d) {
                 return d.name;
@@ -419,15 +439,17 @@ class Home extends Component {
     centerNode(root);
   }
 
-  _handleTouchTap = () => {
-    this.setState({
-      openShowMapDialog: true
-    }, () => {
-      this._showMap();
-    });
+  _handleShowMapTap = () => {
+    if(this.state.openShowMapDialog === false) {
+      this.setState({
+        openShowMapDialog: true
+      }, () => {
+        this._showMap();
+      });
+    }
   }
 
-  _handleClose = () => {
+  _handleCloseShowMapDialog = () => {
     this.setState({
       openShowMapDialog: false
     });
@@ -447,11 +469,25 @@ class Home extends Component {
     });
   }
 
+  _handleReloadLearningTree = () => {
+    this._showMap();
+  }
+
   _handleFireGiveUpDialog = () => {
     const {auth, actions, activity} = this.props;
     const token = auth.get('token');
     const todayActivity = activity.get('todayActivity');
     actions.giveUpActivity(token, todayActivity._id);
+    this.setState({
+      openGiveUpDialog: false,  
+      openSelectAnotherNode: true
+    }, () => {
+      this._showMap();
+    });
+  }
+
+  _handleRetryAfterGiveUp = () => {
+    console.log('Retry button clicked');
   }
 
   render = () => {
@@ -459,96 +495,94 @@ class Home extends Component {
     const todayActivity = activity.get('todayActivity');
     const isSubmitting = activity.get('isSubmitting');
     const currentUser = user.get('currentUser');
+    let bodyContainer, footerContainer;
 
-    if (!todayActivity || !currentUser) return null;
+    if (!currentUser) return null;
 
-    const {
-      company,
-      parent: course,
-      name,
-      description,
-      problem,
-      knowledge,
-      startTime: isStarted,
-    } = todayActivity;
-    let cardContent, companyContent;
+    if(todayActivity) {
+      const {
+        company,
+        parent: course,
+        name,
+        description,
+        problem,
+        knowledge,
+        startTime: isStarted,
+      } = todayActivity;
+      let cardContent, companyContent, showMapButton;
 
-    if (isStarted) {
-      cardContent = <div>
-        <ListDivider />
-        <CardHeader
-          title='Knowledge'
-          subtitle='What you need to finish this activity'
-          avatar={
-            <Avatar
-              icon={<FontIcon className='material-icons'>extension</FontIcon>}
-              color={Colors.lightBlue500}
-              backgroundColor={Colors.grey100} />
-          } />
-        <CardText dangerouslySetInnerHTML={{__html: knowledge}} />
-        <ListDivider />
-        <CardHeader
-          title='Practice'
-          subtitle='Solve the problem again'
-          avatar={
-            <Avatar
-              icon={<FontIcon className='material-icons'>vpn_key</FontIcon>}
-              color={Colors.green500}
-              backgroundColor={Colors.grey100} />
-          } />
-        <CardText>
-          <div dangerouslySetInnerHTML={{__html: problem}} />
-          <AnswerForm
-            status={isSubmitting ? 'pending' : 'idle'}
-            onSubmit={this._handleSubmit} />
-        </CardText>
-      </div>;
-    } else {
-      cardContent = <div>
-        <ListDivider />
-        <CardHeader
-          title='Challenge'
-          subtitle={
-            company
-            ? <span>Contributed by <a href={`mailto:${company.email}`}>{company.name}</a></span>
-            : 'Try it first with all you got'
-          }
-          avatar={
-            <Avatar
-              icon={<FontIcon className='material-icons'>error</FontIcon>}
-              color={Colors.red500}
-              backgroundColor={Colors.grey100} />
-          } />
-        <CardText dangerouslySetInnerHTML={{__html: problem}} />
-        <ListDivider />
-        <CardActions>
-          <FlatButton
-            label='Learn this!'
-            primary={true}
-            onClick={this._handleClickStart} />
-        </CardActions>
-      </div>;
-    }
+      if (isStarted) {
+        cardContent = <div>
+          <ListDivider />
+          <CardHeader
+            title='Knowledge'
+            subtitle='What you need to finish this activity'
+            avatar={
+              <Avatar
+                icon={<FontIcon className='material-icons'>extension</FontIcon>}
+                color={Colors.lightBlue500}
+                backgroundColor={Colors.grey100} />
+            } />
+          <CardText dangerouslySetInnerHTML={{__html: knowledge}} />
+          <ListDivider />
+          <CardHeader
+            title='Practice'
+            subtitle='Solve the problem again'
+            avatar={
+              <Avatar
+                icon={<FontIcon className='material-icons'>vpn_key</FontIcon>}
+                color={Colors.green500}
+                backgroundColor={Colors.grey100} />
+            } />
+          <CardText>
+            <div dangerouslySetInnerHTML={{__html: problem}} />
+            <AnswerForm
+              status={isSubmitting ? 'pending' : 'idle'}
+              onSubmit={this._handleSubmit} />
+          </CardText>
+        </div>;
+      } else {
+        cardContent = <div>
+          <ListDivider />
+          <CardHeader
+            title='Challenge'
+            subtitle={
+              company
+              ? <span>Contributed by <a href={`mailto:${company.email}`}>{company.name}</a></span>
+              : 'Try it first with all you got'
+            }
+            avatar={
+              <Avatar
+                icon={<FontIcon className='material-icons'>error</FontIcon>}
+                color={Colors.red500}
+                backgroundColor={Colors.grey100} />
+            } />
+          <CardText dangerouslySetInnerHTML={{__html: problem}} />
+          <ListDivider />
+          <CardActions>
+            <FlatButton
+              label='Learn this!'
+              primary={true}
+              onClick={this._handleClickStart} />
+          </CardActions>
+        </div>;
+      }
 
-    if(company) {
-      companyContent = <Card className='activity-card'>
-              <CardTitle
-                style={{
-                  width: 592,
-                }}
-                title={company ? company.name : ''}
-                subtitle={company ? company.email : ''} />
-              <CardText>
-                {company ? 'Contact: ' + company.contact : ''}
-              </CardText>
-            </Card>;
-    }
+      if(company) {
+        companyContent = <Card className='activity-card'>
+                <CardTitle
+                  style={{
+                    width: 592,
+                  }}
+                  title={company ? company.name : ''}
+                  subtitle={company ? company.email : ''} />
+                <CardText>
+                  {company ? 'Contact: ' + company.contact : ''}
+                </CardText>
+              </Card>;
+      }
 
-    return (
-      <div className='screen'>
-        <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/64177/screenshots/2635137/simonas-maciulis_space2.png' />
-        <div style={{position: 'relative'}}>
-          <div className='activity-card-container' style={company ? {maxWidth: 1000} : {maxWidth: 500}}>
+      bodyContainer = <div className='activity-card-container' style={company ? {maxWidth: 1000} : {maxWidth: 500}}>
             <Card className='activity-card' style={{marginRight: 10}}>
               <CardMedia>
                 <ImageComponent
@@ -567,9 +601,9 @@ class Home extends Component {
               {cardContent}
             </Card>
             {companyContent}
-          </div>
-        </div>
-        <CountdownConfirm
+          </div>;
+
+      footerContainer = <div><CountdownConfirm
           ref={(node) => {
             this.confirm = node;
           }}
@@ -577,7 +611,7 @@ class Home extends Component {
           action={'undo'}
           countdown={5}
           onCountdownEnd={this._handleCountdownEnd} />
-        <FloatingActionButton secondary={true} onTouchTap={this._handleTouchTap} className='showMap'><FontIcon className='material-icons'>map</FontIcon></FloatingActionButton>
+        <FloatingActionButton secondary={true} onTouchTap={this._handleShowMapTap} className='showMap'><FontIcon className='material-icons'>map</FontIcon></FloatingActionButton>
         <FloatingActionButton onTouchTap={this._handleGiveUpTap} className='giveUp'><FontIcon className='material-icons'>exit_to_app</FontIcon></FloatingActionButton>
         <Dialog
           title='Dialog With Actions'
@@ -610,7 +644,7 @@ class Home extends Component {
               keyboardFocused={true}
               onTouchTap={this._handleFireGiveUpDialog} />,
           ]}
-          modal={true}
+          modal={false}
           open={this.state.openGiveUpDialog}>Do you want to give up?</Dialog>
 
         <Dialog
@@ -618,15 +652,53 @@ class Home extends Component {
             <FlatButton
             label='Cancel'
             secondary={true}
-            onTouchTap={this._handleClose} />
+            onTouchTap={this._handleCloseShowMapDialog} />
           ]}
-          modal={false}
+          modal={true}
           open={this.state.openShowMapDialog}
           onRequestClose={this._handleClose}
         >
           <h2 className="text-center">Your learning path</h2>
           <div id="learning-tree"></div>
         </Dialog>
+
+        <Dialog
+          title='Pick another node to learn or retry'
+          actions={[
+            <FlatButton
+              label='Retry last activity'
+              primary={true}
+              keyboardFocused={true}
+              onTouchTap={this._handleRetryAfterGiveUp} />,
+          ]}
+          modal={true}
+          open={this.state.openSelectAnotherNode}><div id="learning-tree"></div></Dialog>
+          </div>;
+    } else {
+      footerContainer = <Dialog
+          title='Pick another node to learn or retry'
+          actions={[
+            <FlatButton
+              label='Reload learning tree'
+              secondary={true}
+              onTouchTap={this._handleReloadLearningTree} />,
+            <FlatButton
+              label='Retry last activity'
+              primary={true}
+              keyboardFocused={true}
+              onTouchTap={this._handleRetryAfterGiveUp} />,
+          ]}
+          modal={true}
+          open={todayActivity ? this.state.openSelectAnotherNode : true}><div id="learning-tree"></div></Dialog>;
+    }
+
+    return (
+      <div className='screen'>
+        <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/64177/screenshots/2635137/simonas-maciulis_space2.png' />
+        <div style={{position: 'relative'}}>
+          {bodyContainer}
+        </div>
+        {footerContainer}
       </div>
     );
   }
@@ -638,6 +710,7 @@ function mapStateToProps(state) {
     auth: state.auth,
     user: state.user,
     story: state.story,
+    learningPath: state.learningPath,
   };
 }
 
@@ -646,6 +719,7 @@ function mapDispatchToProps(dispatch) {
     actions: bindActionCreators(ActivityActions, dispatch),
     userActions: bindActionCreators(UserActions, dispatch),
     storyActions: bindActionCreators(StoryActions, dispatch),
+    learningPathActions: bindActionCreators(LearningPathActions, dispatch),
   };
 }
 

@@ -37,7 +37,7 @@ class App extends Component {
       }
     }
 
-    if (thisUser.get('currentUser') !== nextUser.get('currentUser')) {
+    if (thisUser.get('currentUser') !== nextUser.get('currentUser') && nextUser.get('currentUser')) {
       if (!nextUser.get('currentUser').enrollments) {
         switchTo('enroll');
       }

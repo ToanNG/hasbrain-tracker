@@ -103,8 +103,17 @@ class Enroll extends Component {
         var children = childrenFn(parent);
         if (children) {
             var count = children.length;
+            var numbDependency = 0;
             for (var i = 0; i < count; i++) {
                 visit(children[i], visitFn, childrenFn);
+                if(children[i].isDependency){
+                  numbDependency++;
+                }
+            }
+            if( numbDependency > 0 && parent.nodeType === 'course' ){
+              parent.isDependency = true;
+            } else {
+              parent.isDependency = false;
             }
         }
     }
@@ -113,7 +122,12 @@ class Enroll extends Component {
     visit(treeData, function(d) {
         totalNodes++;
         maxLabelLength = Math.max(d.name.length, maxLabelLength);
-
+        d.dependency = d.dependency;
+        if(!d.dependency || d.dependency && d.dependency.length === 0){
+            d.isDependency = true;
+        } else {
+            d.isDependency = false;
+        }
     }, function(d) {
         return d.children && d.children.length > 0 ? d.children : null;
     });
@@ -164,7 +178,7 @@ class Enroll extends Component {
 
     function click(node) {
         if (d3.event.defaultPrevented) return;
-        if(node.dependency && node.dependency.length > 0){
+        if(!node.isDependency || node.dependency && node.dependency.length > 0){
             console.log('Does not meet the requirements!');
         } else {
             const token = auth.get('token');
@@ -222,7 +236,7 @@ class Enroll extends Component {
             .attr('class', 'nodeCircle')
             .attr("r", 0)
             .style("fill", function(d) {
-                return d._children ? "lightsteelblue" : "#fff";
+                return d.children || d._children ? "lightsteelblue" : "#fff";
             });
 
         nodeEnter.append("text")
@@ -246,7 +260,7 @@ class Enroll extends Component {
         node.select("circle.nodeCircle")
             .attr("r", 4.5)
             .style("fill", function(d) {
-                return (d.dependency && d.dependency.length > 0) ? "#CCC" : "#fff";
+                return (!d.isDependency) ? "#CCC" : "#fff";
             });
 
         // Transition nodes to their new position.
@@ -323,46 +337,48 @@ class Enroll extends Component {
   render = () => {
     const { openDialog, selectedPath } = this.state;
     const { learningPath } = this.props;
-    const actions = [
-      <FlatButton
-        label='Cancel'
-        secondary={true}
-        onTouchTap={this._handleClose}
-      />,
-      <FlatButton
-        label={`Pick ${selectedPath.get('name')}`}
-        primary={true}
-        keyboardFocused={true}
-        onTouchTap={this._handleSubmit}
-      />
-    ];
 
-    return (
-      <div className='screen'>
-        <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/43762/screenshots/1438974/ng-colab-space_night.gif' />
-        <Paper className='enroll' zDepth={1}>
-          <h2>Pick your path</h2>
-          <List>
-            {learningPath.get('paths').map(path =>
-              <ListItem
-                key={path.get('_id')}
-                primaryText={path.get('name')}
-                onTouchTap={this._handleTouchTap.bind(null, path)}
-              />
-            )}
-          </List>
-        </Paper>
+    if(learningPath.get('paths')) {
+        const actions = [
+          <FlatButton
+            label='Cancel'
+            secondary={true}
+            onTouchTap={this._handleClose}
+          />,
+          <FlatButton
+            label={`Pick ${selectedPath.get('name')}`}
+            primary={true}
+            keyboardFocused={true}
+            onTouchTap={this._handleSubmit}
+          />
+        ];
+        return (
+          <div className='screen'>
+            <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/43762/screenshots/1438974/ng-colab-space_night.gif' />
+            <Paper className='enroll' zDepth={1}>
+              <h2>Pick your path</h2>
+              <List>
+                {learningPath.get('paths').map(path =>
+                  <ListItem
+                    key={path.get('_id')}
+                    primaryText={path.get('name')}
+                    onTouchTap={this._handleTouchTap.bind(null, path)}
+                  />
+                )}
+              </List>
+            </Paper>
 
-        <Dialog
-          actions={actions}
-          modal={false}
-          open={openDialog}
-          onRequestClose={this._handleClose}
-        >
-          <div id="learning-tree" ref={node => {this.learningTree = node}}></div>
-        </Dialog>
-      </div>
-    );
+            <Dialog
+              actions={actions}
+              modal={false}
+              open={openDialog}
+              onRequestClose={this._handleClose}
+            >
+              <div id="learning-tree" ref={node => {this.learningTree = node}}></div>
+            </Dialog>
+          </div>
+        );
+    }
   }
 }
 

@@ -31,6 +31,9 @@ export default function activity(state = INITIAL_STATE, action) {
     case 'GIVE_UP_ACTIVITY_FAIL':
       return state.set('isSubmitting', false);
 
+    case 'CREATE_ACTIVITY_SUCCESS':
+      return state.set('todayActivity', action.result);
+
     case START_ACTIVITY_SUCCESS:
       return state.set('todayActivity', action.result);
 

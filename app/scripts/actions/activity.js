@@ -41,10 +41,27 @@ export function giveUpActivity(token, activityId) {
   };
 }
 
+export function createActivity(token, activityId) {
+  return {
+    types: ['CREATE_ACTIVITY', 'CREATE_ACTIVITY_SUCCESS', 'CREATE_ACTIVITY_FAIL'],
+    api: fetch(`${API_SERVER}/api/story/create`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        activity: activityId,
+      }),
+    }),
+  };
+}
+
 export function startActivity(token, activityId) {
   return {
     types: [START_ACTIVITY, START_ACTIVITY_SUCCESS, START_ACTIVITY_FAIL],
-    api: fetch(`${API_SERVER}/api/story/create`, {
+    api: fetch(`${API_SERVER}/api/story/start`, {
       method: 'post',
       headers: {
         'Accept': 'application/json',
