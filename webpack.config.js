@@ -4,7 +4,7 @@ module.exports = {
   context: __dirname + '/app/scripts',
   entry: {
     app: './index',
-    background: './background',
+    background: './background'
   },
   output: {
     path: __dirname + '/dist',

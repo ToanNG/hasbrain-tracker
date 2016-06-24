@@ -3,7 +3,7 @@ import 'isomorphic-fetch';
 import { API_SERVER } from 'constants/ActionTypes';
 import { switchTo } from 'containers/Router';
 
-export function enroll(token, learningPathId) {
+export function enroll(token, learningPathId, learningNodeId) {
   return dispatch => {
     fetch(`${API_SERVER}/api/enrollment/create`, {
       method: 'post',
@@ -14,6 +14,7 @@ export function enroll(token, learningPathId) {
       },
       body: JSON.stringify({
         learning_path: learningPathId,
+        learning_node: learningNodeId
       }),
     })
     .then(response => response.json())

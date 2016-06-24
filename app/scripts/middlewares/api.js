@@ -17,8 +17,6 @@ export default function apiMiddleware() {
       } else {
         next({ ...rest, result, type: SUCCESS });
       }
-    }).catch(error =>
-      next({ ...rest, error, type: FAILURE })
-    );
+    });
   };
 }
