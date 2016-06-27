@@ -32546,14 +32546,14 @@
 /* 239 */
 /***/ function(module, exports) {
 
-	//export const API_SERVER = 'http://localhost:3000';
 	'use strict';
 
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
-	var API_SERVER = 'http://52.74.99.100';
+	var API_SERVER = 'http://localhost:3000';
 	exports.API_SERVER = API_SERVER;
+	//export const API_SERVER = 'http://52.74.99.100';
 	//export const API_SERVER = 'http://54.254.159.95';
 
 	var LOGIN = 'LOGIN';
@@ -46321,9 +46321,9 @@
 
 	var _materialUiLibCardCardActions2 = _interopRequireDefault(_materialUiLibCardCardActions);
 
-	var _materialUiLibListsListDivider = __webpack_require__(372);
+	var _materialUiLibDivider = __webpack_require__(373);
 
-	var _materialUiLibListsListDivider2 = _interopRequireDefault(_materialUiLibListsListDivider);
+	var _materialUiLibDivider2 = _interopRequireDefault(_materialUiLibDivider);
 
 	var _materialUiLibAvatar = __webpack_require__(369);
 
@@ -46353,6 +46353,10 @@
 
 	var _materialUiLibFloatingActionButton2 = _interopRequireDefault(_materialUiLibFloatingActionButton);
 
+	var _materialUiLibSnackbar = __webpack_require__(378);
+
+	var _materialUiLibSnackbar2 = _interopRequireDefault(_materialUiLibSnackbar);
+
 	var _componentsImage = __webpack_require__(197);
 
 	var _componentsImage2 = _interopRequireDefault(_componentsImage);
@@ -46364,6 +46368,10 @@
 	var _componentsCountdownConfirm = __webpack_require__(377);
 
 	var _componentsCountdownConfirm2 = _interopRequireDefault(_componentsCountdownConfirm);
+
+	var _componentsPomodoro = __webpack_require__(834);
+
+	var _componentsPomodoro2 = _interopRequireDefault(_componentsPomodoro);
 
 	var _actionsActivity = __webpack_require__(381);
 
@@ -46382,8 +46390,8 @@
 	var LearningPathActions = _interopRequireWildcard(_actionsLearningPath);
 
 	var pubnub = PUBNUB({
-	  publish_key: 'pub-c-f2f74db9-1fb1-4376-8f86-89013b0903fd',
-	  subscribe_key: 'sub-c-9f9d4258-b37e-11e5-9848-0619f8945a4f'
+	  publish_key: 'pub-c-8807fd6d-6f87-486f-9fd6-5869bc37e93a',
+	  subscribe_key: 'sub-c-861f96a2-3c20-11e6-9236-02ee2ddab7fe'
 	});
 
 	var Home = (function (_Component) {
@@ -46420,7 +46428,7 @@
 	      var nextUser = nextProps.user.get('currentUser');
 
 	      if (nextUser !== thisUser && nextUser) {
-	        console.log('Subscribing to channel hasbrain_test_' + nextUser._id + '...');
+	        console.log('Subscribing to channel hasbrain_test_' + nextUser._id + ' ...');
 	        pubnub.subscribe({
 	          channel: 'hasbrain_test_' + nextUser._id,
 	          message: function message(_message, env, ch, timer, magic_ch) {
@@ -46429,11 +46437,12 @@
 	        });
 	      }
 
-	      var thisPath = _this.props.learningPath.get('path');
-	      var nextPath = nextProps.learningPath.get('path');
-	      var enrollment = nextProps.user.get('currentUser').enrollments;
-	      if (nextPath !== thisPath && nextPath && enrollment) {
-	        _this._showMap();
+	      if (thisUser && thisUser.enrollments) {
+	        var thisPath = _this.props.learningPath.get('path');
+	        var nextPath = nextProps.learningPath.get('path');
+	        if (nextPath !== thisPath && nextPath) {
+	          _this._showMap();
+	        }
 	      }
 	    };
 
@@ -46516,274 +46525,297 @@
 	      var activity = _props7.activity;
 	      var user = _props7.user;
 
-	      var completedActivityArr = story.get('stories') ? story.get('stories').map(function (story) {
-	        return story.activity._id;
-	      }) : [];
+	      if (user.get('currentUser').enrollments && user.get('currentUser').enrollments.length > 0) {
+	        var treeData;
+	        var completedNodes;
+	        var maxLabelLength;
+	        var i;
+	        var duration;
+	        var root, node;
+	        var that;
+	        var viewerWidth;
+	        var viewerHeight;
+	        var tree;
+	        var diagonal;
+	        var zoomListener;
+	        var baseSvg;
+	        var svgGroup;
 
-	      var currentUser = user.get('currentUser').enrollments[0] ? user.get('currentUser').enrollments[0] : { _id: 0, name: '', children: null };
+	        (function () {
 
-	      var treeData = {
-	        "_id": currentUser.learningPath._id,
-	        "name": currentUser.learningPath.name, // root name
-	        "children": JSON.parse(currentUser.learningPath.nodeTree)
-	      };
+	          // A recursive helper function for performing some setup by walking through all nodes
 
-	      var completedNodes = [];
-	      var maxLabelLength = 0;
-	      // Misc. variables
-	      var i = 0;
-	      var duration = 750;
-	      var root, node;
-	      var that = _this;
+	          var visit = function visit(parent, visitFn, childrenFn) {
+	            if (!parent) return;
 
-	      // size of the diagram
-	      var viewerWidth = 720;
-	      var viewerHeight = 250;
+	            visitFn(parent);
 
-	      var tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
-
-	      // define a d3 diagonal projection for use by the node paths later on.
-	      var diagonal = d3.svg.diagonal().projection(function (d) {
-	        return [d.y, d.x];
-	      });
-
-	      // A recursive helper function for performing some setup by walking through all nodes
-	      function visit(parent, visitFn, childrenFn) {
-	        if (!parent) return;
-
-	        visitFn(parent);
-
-	        var children = childrenFn(parent);
-	        if (children) {
-	          var count = children.length;
-	          var numbCompleted = 0;
-	          for (var i = 0; i < count; i++) {
-	            visit(children[i], visitFn, childrenFn);
-	            if (children[i].isComplete) {
-	              numbCompleted++;
+	            var children = childrenFn(parent);
+	            if (children) {
+	              var count = children.length;
+	              var numbCompleted = 0;
+	              for (var i = 0; i < count; i++) {
+	                visit(children[i], visitFn, childrenFn);
+	                if (children[i].isComplete) {
+	                  numbCompleted++;
+	                }
+	              }
+	              if (count === numbCompleted) {
+	                parent.isComplete = true;
+	              } else {
+	                parent.isComplete = false;
+	              }
 	            }
 	          }
-	          if (count === numbCompleted) {
-	            parent.isComplete = true;
-	          } else {
-	            parent.isComplete = false;
+
+	          // Call visit function to establish maxLabelLength
+	          ;
+
+	          // sort the tree according to the node names
+
+	          var sortTree = function sortTree() {
+	            tree.sort(function (a, b) {
+	              return b.name.toLowerCase() < a.name.toLowerCase() ? 1 : -1;
+	            });
 	          }
-	        }
-	      }
+	          // Sort the tree initially incase the JSON isn't in a sorted order.
+	          ;
 
-	      // Call visit function to establish maxLabelLength
-	      visit(treeData, function (d) {
-	        maxLabelLength = Math.max(d.name.length, maxLabelLength);
+	          // Define the zoom function for the zoomable tree
 
-	        d.nodeType = d.nodeType;
-	        if (completedActivityArr.indexOf(d._id) > -1) {
-	          d.isComplete = true;
-	        } else {
-	          d.isComplete = false;
-	        }
-
-	        if (d.isComplete) {
-	          completedNodes.push(d._id);
-	        }
-	      }, function (d) {
-	        return d.children && d.children.length > 0 ? d.children : null;
-	      });
-
-	      // Loop through treeData to get all of completed nodes.
-	      visit(treeData, function (d) {
-	        if (d.isComplete && completedNodes.indexOf(d._id) === -1) {
-	          completedNodes.push(d._id);
-	        }
-	      }, function (d) {
-	        return d.children && d.children.length > 0 ? d.children : null;
-	      });
-
-	      // sort the tree according to the node names
-
-	      function sortTree() {
-	        tree.sort(function (a, b) {
-	          return b.name.toLowerCase() < a.name.toLowerCase() ? 1 : -1;
-	        });
-	      }
-	      // Sort the tree initially incase the JSON isn't in a sorted order.
-	      sortTree();
-
-	      // Define the zoom function for the zoomable tree
-	      function zoom() {
-	        svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-	      }
-
-	      // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
-	      var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
-
-	      // define the baseSvg, attaching a class for styling and the zoomListener
-	      d3.select("svg").remove();
-	      var baseSvg = d3.select("#learning-tree").insert("svg").attr("width", viewerWidth).attr("height", viewerHeight).attr("class", "overlay").call(zoomListener);
-
-	      // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
-	      function centerNode(source) {
-	        var scale = zoomListener.scale();
-	        var x = -source.y0;
-	        var y = -source.x0;
-	        x = x * scale + viewerWidth / 2;
-	        y = y * scale + viewerHeight / 2;
-	        d3.select('g').transition().duration(duration).attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
-	        zoomListener.scale(scale);
-	        zoomListener.translate([x, y]);
-	      }
-
-	      function click(d) {
-	        console.log('clicked');
-	        if (d3.event.defaultPrevented) return; // click suppressed
-	        var todayActivity = activity.get('todayActivity');
-	        var flag = true;
-	        if (todayActivity) {
-	          var isStarted = todayActivity.startTime;
-
-	          if (isStarted) {
-	            flag = false;
+	          var zoom = function zoom() {
+	            svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
 	          }
-	        }
 
-	        if (!d.isComplete && d.nodeType === 'activity') {
-	          if (d.dependency && d.dependency.length > 0) {
-	            d.dependency.map(function (id) {
-	              if (completedNodes.indexOf(id) === -1) {
-	                console.log('Does not meet the requirements!');
+	          // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
+	          ;
+
+	          // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
+
+	          var centerNode = function centerNode(source) {
+	            var scale = zoomListener.scale();
+	            var x = -source.y0;
+	            var y = -source.x0;
+	            x = x * scale + viewerWidth / 2;
+	            y = y * scale + viewerHeight / 2;
+	            d3.select('g').transition().duration(duration).attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
+	            zoomListener.scale(scale);
+	            zoomListener.translate([x, y]);
+	          };
+
+	          var click = function click(d) {
+	            console.log('clicked');
+	            if (d3.event.defaultPrevented) return; // click suppressed
+	            var todayActivity = activity.get('todayActivity');
+	            var flag = true;
+	            if (todayActivity) {
+	              var isStarted = todayActivity.startTime;
+
+	              if (isStarted) {
 	                flag = false;
-	                return;
 	              }
+	            }
+
+	            if (!d.isComplete && d.nodeType === 'activity') {
+	              if (d.dependency && d.dependency.length > 0) {
+	                d.dependency.map(function (id) {
+	                  if (completedNodes.indexOf(id) === -1) {
+	                    console.log('Does not meet the requirements!');
+	                    flag = false;
+	                    return;
+	                  }
+	                });
+	              }
+	            }
+
+	            if (flag) {
+	              var token = auth.get('token');
+	              actions.createActivity(token, d._id);
+	              that.setState({ openShowMapDialog: false, openSelectAnotherNode: false });
+	            }
+	          };
+
+	          var update = function update(source) {
+	            // Compute the new height, function counts total children of root node and sets tree height accordingly.
+	            // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
+	            // This makes the layout more consistent.
+	            var levelWidth = [1];
+	            var childCount = function childCount(level, n) {
+
+	              if (n.children && n.children.length > 0) {
+	                if (levelWidth.length <= level + 1) levelWidth.push(0);
+
+	                levelWidth[level + 1] += n.children.length;
+	                n.children.forEach(function (d) {
+	                  childCount(level + 1, d);
+	                });
+	              }
+	            };
+	            childCount(0, root);
+	            var newHeight = d3.max(levelWidth) * 25; // 25 pixels per line 
+	            tree = tree.size([newHeight, viewerWidth]);
+
+	            // Compute the new tree layout.
+	            var nodes = tree.nodes(root).reverse(),
+	                links = tree.links(nodes);
+
+	            // Set widths between levels based on maxLabelLength.
+	            nodes.forEach(function (d) {
+	              d.y = d.depth * (maxLabelLength * 10); //maxLabelLength * 10px
+	              // alternatively to keep a fixed scale one can set a fixed depth per level
+	              // Normalize for fixed-depth by commenting out below line
+	              // d.y = (d.depth * 500); //500px per level.
+	            });
+
+	            // Update the nodes…
+	            node = svgGroup.selectAll("g.node").data(nodes, function (d) {
+	              return d.id || (d.id = ++i);
+	            });
+
+	            // Enter any new nodes at the parent's previous position.
+	            var nodeEnter = node.enter().append("g").attr("class", "node").attr("transform", function (d) {
+	              return "translate(" + source.y0 + "," + source.x0 + ")";
+	            }).on('click', click);
+
+	            nodeEnter.append("circle").attr('class', 'nodeCircle').attr("r", 0).style("fill", function (d) {
+	              return d.children ? "lightsteelblue" : "#fff";
+	            });
+
+	            nodeEnter.append("text").attr("x", function (d) {
+	              return d.children || d._children ? 10 : 10;
+	            }).attr("y", function (d) {
+	              return d.children || d._children ? -10 : 0;
+	            }).attr("dy", ".35em").attr('class', 'nodeText').attr("text-anchor", function (d) {
+	              return d.children || d._children ? "end" : "start";
+	            }).text(function (d) {
+	              return d.name;
+	            }).style("fill-opacity", 0);
+
+	            // Change the circle fill depending on whether it has children and is collapsed
+	            // Style for node
+	            node.select("circle.nodeCircle").attr("r", 4.5).style("fill", function (d) {
+	              return d.isComplete ? "#3CF53D" : d.dependency && d.dependency.length > 0 ? "#CCC" : "#fff";
+	            });
+
+	            // Transition nodes to their new position.
+	            var nodeUpdate = node.transition().duration(duration).attr("transform", function (d) {
+	              return "translate(" + d.y + "," + d.x + ")";
+	            });
+
+	            // Fade the text in
+	            nodeUpdate.select("text").style("fill-opacity", 1);
+
+	            // Update the links…
+	            var link = svgGroup.selectAll("path.link").data(links, function (d) {
+	              return d.target.id;
+	            });
+
+	            // Enter any new links at the parent's previous position.
+	            link.enter().insert("path", "g").attr("class", "link").attr("d", function (d) {
+	              var o = {
+	                x: source.x0,
+	                y: source.y0
+	              };
+	              return diagonal({
+	                source: o,
+	                target: o
+	              });
+	            });
+
+	            // Transition links to their new position.
+	            link.transition().duration(duration).attr("d", diagonal);
+
+	            // Transition exiting nodes to the parent's new position.
+	            link.exit().transition().duration(duration).attr("d", function (d) {
+	              var o = {
+	                x: source.x,
+	                y: source.y
+	              };
+	              return diagonal({
+	                source: o,
+	                target: o
+	              });
+	            }).remove();
+
+	            // Stash the old positions for transition.
+	            nodes.forEach(function (d) {
+	              d.x0 = d.x;
+	              d.y0 = d.y;
 	            });
 	          }
-	        }
 
-	        if (flag) {
-	          var token = auth.get('token');
-	          actions.createActivity(token, d._id);
-	          that.setState({ openShowMapDialog: false, openSelectAnotherNode: false });
-	        }
-	      }
+	          // Append a group which holds all nodes and which the zoom Listener can act upon.
+	          ;
 
-	      function update(source) {
-	        // Compute the new height, function counts total children of root node and sets tree height accordingly.
-	        // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
-	        // This makes the layout more consistent.
-	        var levelWidth = [1];
-	        var childCount = function childCount(level, n) {
+	          var completedActivityArr = story.get('stories') ? story.get('stories').map(function (story) {
+	            return story.activity._id;
+	          }) : [];
 
-	          if (n.children && n.children.length > 0) {
-	            if (levelWidth.length <= level + 1) levelWidth.push(0);
+	          var currentUser = user.get('currentUser').enrollments[0] ? user.get('currentUser').enrollments[0] : { _id: 0, name: '', children: null };
 
-	            levelWidth[level + 1] += n.children.length;
-	            n.children.forEach(function (d) {
-	              childCount(level + 1, d);
-	            });
-	          }
-	        };
-	        childCount(0, root);
-	        var newHeight = d3.max(levelWidth) * 25; // 25 pixels per line 
-	        tree = tree.size([newHeight, viewerWidth]);
-
-	        // Compute the new tree layout.
-	        var nodes = tree.nodes(root).reverse(),
-	            links = tree.links(nodes);
-
-	        // Set widths between levels based on maxLabelLength.
-	        nodes.forEach(function (d) {
-	          d.y = d.depth * (maxLabelLength * 10); //maxLabelLength * 10px
-	          // alternatively to keep a fixed scale one can set a fixed depth per level
-	          // Normalize for fixed-depth by commenting out below line
-	          // d.y = (d.depth * 500); //500px per level.
-	        });
-
-	        // Update the nodes…
-	        node = svgGroup.selectAll("g.node").data(nodes, function (d) {
-	          return d.id || (d.id = ++i);
-	        });
-
-	        // Enter any new nodes at the parent's previous position.
-	        var nodeEnter = node.enter().append("g").attr("class", "node").attr("transform", function (d) {
-	          return "translate(" + source.y0 + "," + source.x0 + ")";
-	        }).on('click', click);
-
-	        nodeEnter.append("circle").attr('class', 'nodeCircle').attr("r", 0).style("fill", function (d) {
-	          return d.children ? "lightsteelblue" : "#fff";
-	        });
-
-	        nodeEnter.append("text").attr("x", function (d) {
-	          return d.children || d._children ? 10 : 10;
-	        }).attr("y", function (d) {
-	          return d.children || d._children ? -10 : 0;
-	        }).attr("dy", ".35em").attr('class', 'nodeText').attr("text-anchor", function (d) {
-	          return d.children || d._children ? "end" : "start";
-	        }).text(function (d) {
-	          return d.name;
-	        }).style("fill-opacity", 0);
-
-	        // Change the circle fill depending on whether it has children and is collapsed
-	        // Style for node
-	        node.select("circle.nodeCircle").attr("r", 4.5).style("fill", function (d) {
-	          return d.isComplete ? "#3CF53D" : d.dependency && d.dependency.length > 0 ? "#CCC" : "#fff";
-	        });
-
-	        // Transition nodes to their new position.
-	        var nodeUpdate = node.transition().duration(duration).attr("transform", function (d) {
-	          return "translate(" + d.y + "," + d.x + ")";
-	        });
-
-	        // Fade the text in
-	        nodeUpdate.select("text").style("fill-opacity", 1);
-
-	        // Update the links…
-	        var link = svgGroup.selectAll("path.link").data(links, function (d) {
-	          return d.target.id;
-	        });
-
-	        // Enter any new links at the parent's previous position.
-	        link.enter().insert("path", "g").attr("class", "link").attr("d", function (d) {
-	          var o = {
-	            x: source.x0,
-	            y: source.y0
+	          treeData = {
+	            "_id": currentUser.learningPath._id,
+	            "name": currentUser.learningPath.name, // root name
+	            "children": JSON.parse(currentUser.learningPath.nodeTree)
 	          };
-	          return diagonal({
-	            source: o,
-	            target: o
+	          completedNodes = [];
+	          maxLabelLength = 0;
+
+	          // Misc. variables
+	          i = 0;
+	          duration = 750;
+	          that = _this;
+
+	          // size of the diagram
+	          viewerWidth = 720;
+	          viewerHeight = 250;
+	          tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
+
+	          // define a d3 diagonal projection for use by the node paths later on.
+	          diagonal = d3.svg.diagonal().projection(function (d) {
+	            return [d.y, d.x];
 	          });
-	        });
+	          visit(treeData, function (d) {
+	            maxLabelLength = Math.max(d.name.length, maxLabelLength);
 
-	        // Transition links to their new position.
-	        link.transition().duration(duration).attr("d", diagonal);
+	            d.nodeType = d.nodeType;
+	            if (completedActivityArr.indexOf(d._id) > -1) {
+	              d.isComplete = true;
+	            } else {
+	              d.isComplete = false;
+	            }
 
-	        // Transition exiting nodes to the parent's new position.
-	        link.exit().transition().duration(duration).attr("d", function (d) {
-	          var o = {
-	            x: source.x,
-	            y: source.y
-	          };
-	          return diagonal({
-	            source: o,
-	            target: o
+	            if (d.isComplete) {
+	              completedNodes.push(d._id);
+	            }
+	          }, function (d) {
+	            return d.children && d.children.length > 0 ? d.children : null;
 	          });
-	        }).remove();
 
-	        // Stash the old positions for transition.
-	        nodes.forEach(function (d) {
-	          d.x0 = d.x;
-	          d.y0 = d.y;
-	        });
+	          // Loop through treeData to get all of completed nodes.
+	          visit(treeData, function (d) {
+	            if (d.isComplete && completedNodes.indexOf(d._id) === -1) {
+	              completedNodes.push(d._id);
+	            }
+	          }, function (d) {
+	            return d.children && d.children.length > 0 ? d.children : null;
+	          });sortTree();zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+
+	          // define the baseSvg, attaching a class for styling and the zoomListener
+	          d3.select("svg").remove();
+	          baseSvg = d3.select("#learning-tree").insert("svg").attr("width", viewerWidth).attr("height", viewerHeight).attr("class", "overlay").call(zoomListener);
+	          svgGroup = baseSvg.append("g");
+
+	          // Define the root
+	          root = treeData;
+	          root.x0 = viewerHeight / 2;
+	          root.y0 = 0;
+
+	          // Layout the tree initially and center on the root node.
+	          update(root);
+	          centerNode(root);
+	        })();
 	      }
-
-	      // Append a group which holds all nodes and which the zoom Listener can act upon.
-	      var svgGroup = baseSvg.append("g");
-
-	      // Define the root
-	      root = treeData;
-	      root.x0 = viewerHeight / 2;
-	      root.y0 = 0;
-
-	      // Layout the tree initially and center on the root node.
-	      update(root);
-	      centerNode(root);
 	    };
 
 	    this._handleShowMapTap = function () {
@@ -46871,7 +46903,7 @@
 	          cardContent = _react2['default'].createElement(
 	            'div',
 	            null,
-	            _react2['default'].createElement(_materialUiLibListsListDivider2['default'], null),
+	            _react2['default'].createElement(_materialUiLibDivider2['default'], null),
 	            _react2['default'].createElement(_materialUiLibCardCardHeader2['default'], {
 	              title: 'Knowledge',
 	              subtitle: 'What you need to finish this activity',
@@ -46884,7 +46916,7 @@
 	                color: _materialUiLibStylesColors2['default'].lightBlue500,
 	                backgroundColor: _materialUiLibStylesColors2['default'].grey100 }) }),
 	            _react2['default'].createElement(_materialUiLibCardCardText2['default'], { dangerouslySetInnerHTML: { __html: knowledge } }),
-	            _react2['default'].createElement(_materialUiLibListsListDivider2['default'], null),
+	            _react2['default'].createElement(_materialUiLibDivider2['default'], null),
 	            _react2['default'].createElement(_materialUiLibCardCardHeader2['default'], {
 	              title: 'Practice',
 	              subtitle: 'Solve the problem again',
@@ -46909,7 +46941,7 @@
 	          cardContent = _react2['default'].createElement(
 	            'div',
 	            null,
-	            _react2['default'].createElement(_materialUiLibListsListDivider2['default'], null),
+	            _react2['default'].createElement(_materialUiLibDivider2['default'], null),
 	            _react2['default'].createElement(_materialUiLibCardCardHeader2['default'], {
 	              title: 'Challenge',
 	              subtitle: company ? _react2['default'].createElement(
@@ -46931,7 +46963,7 @@
 	                color: _materialUiLibStylesColors2['default'].red500,
 	                backgroundColor: _materialUiLibStylesColors2['default'].grey100 }) }),
 	            _react2['default'].createElement(_materialUiLibCardCardText2['default'], { dangerouslySetInnerHTML: { __html: problem } }),
-	            _react2['default'].createElement(_materialUiLibListsListDivider2['default'], null),
+	            _react2['default'].createElement(_materialUiLibDivider2['default'], null),
 	            _react2['default'].createElement(
 	              _materialUiLibCardCardActions2['default'],
 	              null,
@@ -47111,7 +47143,10 @@
 	          { style: { position: 'relative' } },
 	          bodyContainer
 	        ),
-	        footerContainer
+	        footerContainer,
+	        _react2['default'].createElement(_componentsPomodoro2['default'], {
+	          action: 'Undo',
+	          countdown: 3000 })
 	      );
 	    };
 	  }
@@ -49762,44 +49797,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 372 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _divider = __webpack_require__(373);
-
-	var _divider2 = _interopRequireDefault(_divider);
-
-	var _warning = __webpack_require__(263);
-
-	var _warning2 = _interopRequireDefault(_warning);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var ListDivider = _react2.default.createClass({
-	  displayName: 'ListDivider',
-	  getInitialState: function getInitialState() {
-	     true ? (0, _warning2.default)(false, '<ListDivider /> has been deprecated. Please use the <Divider /> component.') : undefined;
-	    return null;
-	  },
-	  render: function render() {
-	    return _react2.default.createElement(_divider2.default, this.props);
-	  }
-	});
-
-	exports.default = ListDivider;
-	module.exports = exports['default'];
-
-/***/ },
+/* 372 */,
 /* 373 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -66630,6 +66628,105 @@
 
 	// exports
 
+
+/***/ },
+/* 834 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactDom = __webpack_require__(157);
+
+	var _reactDom2 = _interopRequireDefault(_reactDom);
+
+	var _materialUiLibSnackbar = __webpack_require__(378);
+
+	var _materialUiLibSnackbar2 = _interopRequireDefault(_materialUiLibSnackbar);
+
+	var Pomodoro = (function (_Component) {
+	  _inherits(Pomodoro, _Component);
+
+	  function Pomodoro() {
+	    var _this = this;
+
+	    _classCallCheck(this, Pomodoro);
+
+	    _get(Object.getPrototypeOf(Pomodoro.prototype), 'constructor', this).apply(this, arguments);
+
+	    this._handleActionTouchTap = function () {
+	      _this.snackbar.dismiss();
+	    };
+
+	    this._handleDismiss = function () {
+	      clearInterval(_this.interval);
+	    };
+
+	    this._handleShow = function () {
+	      var _props = _this.props;
+	      var message = _props.message;
+	      var count = _props.countdown;
+	      var onCountdownEnd = _props.onCountdownEnd;
+
+	      var elem = _reactDom2['default'].findDOMNode(_this.snackbar).getElementsByTagName('span')[0];
+	      var updateMessage = function updateMessage() {
+	        if (count < 0) {
+	          _this.snackbar.dismiss();
+	          return onCountdownEnd();
+	        }
+	        elem.innerHTML = message.replace('[count]', count--);
+	        return updateMessage;
+	      };
+
+	      clearInterval(_this.interval);
+	      _this.interval = setInterval(updateMessage(), 1000);
+	    };
+
+	    this.show = function () {
+	      _this.snackbar.show();
+	    };
+
+	    this.dismiss = function () {
+	      _this.snackbar.dismiss();
+	    };
+
+	    this.render = function () {
+	      var _props2 = _this.props;
+	      var action = _props2.action;
+	      var countdown = _props2.countdown;
+
+	      return _react2['default'].createElement(_materialUiLibSnackbar2['default'], {
+	        ref: function (node) {
+	          _this.snackbar = node;
+	        },
+	        open: true,
+	        message: 'Pomodoro',
+	        action: action,
+	        autoHideDuration: 0,
+	        onActionTouchTap: _this._handleActionTouchTap });
+	    };
+	  }
+
+	  return Pomodoro;
+	})(_react.Component);
+
+	exports['default'] = Pomodoro;
+	module.exports = exports['default'];
 
 /***/ }
 /******/ ]);
