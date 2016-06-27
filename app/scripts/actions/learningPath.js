@@ -13,3 +13,15 @@ export function getLearningPaths(token) {
     }),
   };
 }
+
+export function getLearningPath(token) {
+  return {
+    types: ['GET_MY_PATH', 'GET_MY_PATH_SUCCESS', 'GET_MY_PATH_FAIL'],
+    api: fetch(`${API_SERVER}/api/learning-path/me`, {
+      method: 'get',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    }),
+  };
+}

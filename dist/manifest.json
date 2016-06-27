@@ -14,5 +14,5 @@
     "storage",
     "http://*/*"
   ],
-  "content_security_policy": "script-src 'self' https://cdn.pubnub.com/pubnub-3.7.18.min.js; object-src 'self'"
+  "content_security_policy": "script-src 'self' https://code.jquery.com/jquery-1.10.2.min.js https://cdn.pubnub.com/pubnub-3.7.18.min.js https://d3js.org/d3.v3.min.js; object-src 'self'"
 }
