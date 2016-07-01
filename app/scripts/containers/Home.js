@@ -733,7 +733,7 @@ class Home extends Component {
     return (
       <div className='screen'>
         <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/64177/screenshots/2635137/simonas-maciulis_space2.png' />
-        <div style={{position: 'relative'}}>
+        <div style={{position: 'relative', overflow:'auto'}}>
           {bodyContainer}
         </div>
         {footerContainer}

@@ -26542,7 +26542,6 @@
 	          actions.setToken(nextAuth.get('token'));
 	          switchTo('home');
 	        } else {
-	          ;
 	          switchTo('login');
 	        }
 	      }
@@ -32547,16 +32546,15 @@
 /* 239 */
 /***/ function(module, exports) {
 
+	//export const API_SERVER = 'http://localhost:3000';
 	'use strict';
 
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
-	var API_SERVER = 'http://localhost:3000';
-	exports.API_SERVER = API_SERVER;
-	//export const API_SERVER = 'http://52.74.99.100';
-	//export const API_SERVER = 'http://54.254.159.95';
+	var API_SERVER = 'http://52.74.99.100';
 
+	exports.API_SERVER = API_SERVER;
 	var LOGIN = 'LOGIN';
 	exports.LOGIN = LOGIN;
 	var LOGIN_SUCCESS = 'LOGIN_SUCCESS';
@@ -47197,7 +47195,7 @@
 	        _react2['default'].createElement(_componentsImage2['default'], { className: 'wallpaper', src: 'https://d13yacurqjgara.cloudfront.net/users/64177/screenshots/2635137/simonas-maciulis_space2.png' }),
 	        _react2['default'].createElement(
 	          'div',
-	          { style: { position: 'relative' } },
+	          { style: { position: 'relative', overflow: 'auto' } },
 	          bodyContainer
 	        ),
 	        footerContainer

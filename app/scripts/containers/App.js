@@ -32,7 +32,7 @@ class App extends Component {
       if (nextAuth.get('isLoggedIn')) {
         actions.setToken(nextAuth.get('token'));
         switchTo('home');
-      } else {;
+      } else {
         switchTo('login');
       }
     }
