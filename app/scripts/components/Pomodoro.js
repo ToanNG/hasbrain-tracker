@@ -44,7 +44,7 @@ class Pomodoro extends Component {
           this.snackbar = node;
         }}
         open={true}
-        message='Pomodoro'
+        message='Pomodoro times'
         action={action}
         autoHideDuration={0}
         onActionTouchTap={this._handleActionTouchTap} />

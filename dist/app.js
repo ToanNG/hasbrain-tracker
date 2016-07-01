@@ -26542,6 +26542,7 @@
 	          actions.setToken(nextAuth.get('token'));
 	          switchTo('home');
 	        } else {
+	          ;
 	          switchTo('login');
 	        }
 	      }
@@ -46273,7 +46274,7 @@
 	  value: true
 	});
 
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -46321,7 +46322,7 @@
 
 	var _materialUiLibCardCardActions2 = _interopRequireDefault(_materialUiLibCardCardActions);
 
-	var _materialUiLibDivider = __webpack_require__(373);
+	var _materialUiLibDivider = __webpack_require__(372);
 
 	var _materialUiLibDivider2 = _interopRequireDefault(_materialUiLibDivider);
 
@@ -46349,27 +46350,35 @@
 
 	var _materialUiLibRaisedButton2 = _interopRequireDefault(_materialUiLibRaisedButton);
 
-	var _materialUiLibFloatingActionButton = __webpack_require__(375);
+	var _materialUiLibFloatingActionButton = __webpack_require__(374);
 
 	var _materialUiLibFloatingActionButton2 = _interopRequireDefault(_materialUiLibFloatingActionButton);
 
-	var _materialUiLibSnackbar = __webpack_require__(378);
+	var _materialUiLibSnackbar = __webpack_require__(375);
 
 	var _materialUiLibSnackbar2 = _interopRequireDefault(_materialUiLibSnackbar);
+
+	var _materialUiLibListsList = __webpack_require__(340);
+
+	var _materialUiLibListsList2 = _interopRequireDefault(_materialUiLibListsList);
+
+	var _materialUiLibListsListItem = __webpack_require__(341);
+
+	var _materialUiLibListsListItem2 = _interopRequireDefault(_materialUiLibListsListItem);
 
 	var _componentsImage = __webpack_require__(197);
 
 	var _componentsImage2 = _interopRequireDefault(_componentsImage);
 
-	var _componentsAnswerForm = __webpack_require__(376);
+	var _componentsAnswerForm = __webpack_require__(378);
 
 	var _componentsAnswerForm2 = _interopRequireDefault(_componentsAnswerForm);
 
-	var _componentsCountdownConfirm = __webpack_require__(377);
+	var _componentsCountdownConfirm = __webpack_require__(379);
 
 	var _componentsCountdownConfirm2 = _interopRequireDefault(_componentsCountdownConfirm);
 
-	var _componentsPomodoro = __webpack_require__(834);
+	var _componentsPomodoro = __webpack_require__(380);
 
 	var _componentsPomodoro2 = _interopRequireDefault(_componentsPomodoro);
 
@@ -46387,7 +46396,11 @@
 
 	var _actionsLearningPath = __webpack_require__(349);
 
-	var LearningPathActions = _interopRequireWildcard(_actionsLearningPath);
+	var PathActions = _interopRequireWildcard(_actionsLearningPath);
+
+	var _actionsPairing = __webpack_require__(836);
+
+	var PairingActions = _interopRequireWildcard(_actionsPairing);
 
 	var pubnub = PUBNUB({
 	  publish_key: 'pub-c-8807fd6d-6f87-486f-9fd6-5869bc37e93a',
@@ -46416,7 +46429,8 @@
 	      _this._getTodayActivity();
 	      _this._getUser();
 	      _this._getStory();
-	      _this._getLearningPath();
+	      _this._getPath();
+	      _this._getPartner();
 	    };
 
 	    this.componentDidUpdate = function () {
@@ -46473,13 +46487,22 @@
 	      storyActions.getCompleteStory(token);
 	    };
 
-	    this._getLearningPath = function () {
+	    this._getPath = function () {
 	      var _props4 = _this.props;
 	      var auth = _props4.auth;
-	      var learningPathActions = _props4.learningPathActions;
+	      var pathActions = _props4.pathActions;
 
 	      var token = auth.get('token');
-	      learningPathActions.getLearningPath(token);
+	      pathActions.getLearningPath(token);
+	    };
+
+	    this._getPartner = function () {
+	      var _props5 = _this.props;
+	      var auth = _props5.auth;
+	      var pairingActions = _props5.pairingActions;
+
+	      var token = auth.get('token');
+	      pairingActions.getPartner(token);
 	    };
 
 	    this._handleClickStart = function () {
@@ -46487,10 +46510,10 @@
 	    };
 
 	    this._handleCountdownEnd = function () {
-	      var _props5 = _this.props;
-	      var auth = _props5.auth;
-	      var activity = _props5.activity;
-	      var actions = _props5.actions;
+	      var _props6 = _this.props;
+	      var auth = _props6.auth;
+	      var activity = _props6.activity;
+	      var actions = _props6.actions;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -46498,10 +46521,10 @@
 	    };
 
 	    this._handleSubmit = function (repoUrl) {
-	      var _props6 = _this.props;
-	      var auth = _props6.auth;
-	      var activity = _props6.activity;
-	      var actions = _props6.actions;
+	      var _props7 = _this.props;
+	      var auth = _props7.auth;
+	      var activity = _props7.activity;
+	      var actions = _props7.actions;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -46518,12 +46541,13 @@
 	    };
 
 	    this._showMap = function () {
-	      var _props7 = _this.props;
-	      var story = _props7.story;
-	      var auth = _props7.auth;
-	      var actions = _props7.actions;
-	      var activity = _props7.activity;
-	      var user = _props7.user;
+	      var canClickOnNode = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+	      var _props8 = _this.props;
+	      var story = _props8.story;
+	      var auth = _props8.auth;
+	      var actions = _props8.actions;
+	      var activity = _props8.activity;
+	      var user = _props8.user;
 
 	      if (user.get('currentUser').enrollments && user.get('currentUser').enrollments.length > 0) {
 	        var treeData;
@@ -46604,34 +46628,35 @@
 	          };
 
 	          var click = function click(d) {
-	            console.log('clicked');
 	            if (d3.event.defaultPrevented) return; // click suppressed
-	            var todayActivity = activity.get('todayActivity');
-	            var flag = true;
-	            if (todayActivity) {
-	              var isStarted = todayActivity.startTime;
+	            if (canClickOnNode) {
+	              var flag = true;
+	              if (todayActivity) {
+	                var isStarted = todayActivity.startTime;
 
-	              if (isStarted) {
-	                flag = false;
+	                if (isStarted) {
+	                  console.log('You must drop out current activity to select another one');
+	                  flag = false;
+	                }
 	              }
-	            }
 
-	            if (!d.isComplete && d.nodeType === 'activity') {
-	              if (d.dependency && d.dependency.length > 0) {
-	                d.dependency.map(function (id) {
-	                  if (completedNodes.indexOf(id) === -1) {
-	                    console.log('Does not meet the requirements!');
-	                    flag = false;
-	                    return;
-	                  }
-	                });
+	              if (!d.isComplete && d.nodeType === 'activity') {
+	                if (d.dependency && d.dependency.length > 0) {
+	                  d.dependency.map(function (id) {
+	                    if (completedNodes.indexOf(id) === -1) {
+	                      console.log('Does not meet the requirements!');
+	                      flag = false;
+	                      return;
+	                    }
+	                  });
+	                }
 	              }
-	            }
 
-	            if (flag) {
-	              var token = auth.get('token');
-	              actions.createActivity(token, d._id);
-	              that.setState({ openShowMapDialog: false, openSelectAnotherNode: false });
+	              if (flag) {
+	                var token = auth.get('token');
+	                actions.createActivity(token, d._id);
+	                that.setState({ openShowMapDialog: false, openSelectAnotherNode: false });
+	              }
 	            }
 	          };
 
@@ -46694,7 +46719,7 @@
 	            // Change the circle fill depending on whether it has children and is collapsed
 	            // Style for node
 	            node.select("circle.nodeCircle").attr("r", 4.5).style("fill", function (d) {
-	              return d.isComplete ? "#3CF53D" : d.dependency && d.dependency.length > 0 ? "#CCC" : "#fff";
+	              return todayActivity ? d._id === todayActivity._id && "#ff4081" : d.isComplete ? "#3CF53D" : d.dependency && d.dependency.length > 0 ? "#CCC" : "#fff";
 	            });
 
 	            // Transition nodes to their new position.
@@ -46751,6 +46776,7 @@
 	            return story.activity._id;
 	          }) : [];
 
+	          var todayActivity = activity.get('todayActivity');
 	          var currentUser = user.get('currentUser').enrollments[0] ? user.get('currentUser').enrollments[0] : { _id: 0, name: '', children: null };
 
 	          treeData = {
@@ -46823,7 +46849,7 @@
 	        _this.setState({
 	          openShowMapDialog: true
 	        }, function () {
-	          _this._showMap();
+	          _this._showMap(false);
 	        });
 	      }
 	    };
@@ -46853,10 +46879,10 @@
 	    };
 
 	    this._handleFireGiveUpDialog = function () {
-	      var _props8 = _this.props;
-	      var auth = _props8.auth;
-	      var actions = _props8.actions;
-	      var activity = _props8.activity;
+	      var _props9 = _this.props;
+	      var auth = _props9.auth;
+	      var actions = _props9.actions;
+	      var activity = _props9.activity;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -46874,13 +46900,15 @@
 	    };
 
 	    this.render = function () {
-	      var _props9 = _this.props;
-	      var activity = _props9.activity;
-	      var user = _props9.user;
+	      var _props10 = _this.props;
+	      var activity = _props10.activity;
+	      var user = _props10.user;
+	      var pairing = _props10.pairing;
 
 	      var todayActivity = activity.get('todayActivity');
 	      var isSubmitting = activity.get('isSubmitting');
 	      var currentUser = user.get('currentUser');
+	      var partner = pairing.get('pairing');
 	      var bodyContainer = undefined,
 	          footerContainer = undefined;
 
@@ -46894,9 +46922,11 @@
 	        var problem = todayActivity.problem;
 	        var knowledge = todayActivity.knowledge;
 	        var isStarted = todayActivity.startTime;
+	        var isCompleted = todayActivity.isCompleted;
 
 	        var cardContent = undefined,
 	            companyContent = undefined,
+	            partnerContent = undefined,
 	            showMapButton = undefined;
 
 	        if (isStarted) {
@@ -46932,7 +46962,17 @@
 	              _materialUiLibCardCardText2['default'],
 	              null,
 	              _react2['default'].createElement('div', { dangerouslySetInnerHTML: { __html: problem } }),
-	              _react2['default'].createElement(_componentsAnswerForm2['default'], {
+	              todayActivity.buddyCompleted === false && partner ? _react2['default'].createElement(
+	                'div',
+	                null,
+	                _react2['default'].createElement(_materialUiLibDivider2['default'], null),
+	                _react2['default'].createElement('br', null),
+	                _react2['default'].createElement(
+	                  'i',
+	                  null,
+	                  'You\'re finished it and you need to help your buddy overcome this challenge to continue!'
+	                )
+	              ) : _react2['default'].createElement(_componentsAnswerForm2['default'], {
 	                status: isSubmitting ? 'pending' : 'idle',
 	                onSubmit: _this._handleSubmit })
 	            )
@@ -46978,7 +47018,7 @@
 	        if (company) {
 	          companyContent = _react2['default'].createElement(
 	            _materialUiLibCardCard2['default'],
-	            { className: 'activity-card' },
+	            null,
 	            _react2['default'].createElement(_materialUiLibCardCardTitle2['default'], {
 	              style: {
 	                width: 592
@@ -46988,17 +47028,45 @@
 	            _react2['default'].createElement(
 	              _materialUiLibCardCardText2['default'],
 	              null,
+	              _react2['default'].createElement('div', { dangerouslySetInnerHTML: { __html: company.description } }),
+	              _react2['default'].createElement('br', null),
+	              _react2['default'].createElement(_materialUiLibDivider2['default'], null),
+	              _react2['default'].createElement('br', null),
 	              company ? 'Contact: ' + company.contact : ''
+	            )
+	          );
+	        }
+
+	        if (partner) {
+	          var buddy = currentUser._id === partner.studentA._id ? partner.studentB : partner.studentA;
+	          partnerContent = _react2['default'].createElement(
+	            _materialUiLibCardCard2['default'],
+	            null,
+	            _react2['default'].createElement(_materialUiLibCardCardHeader2['default'], {
+	              title: 'Your buddy',
+	              subtitle: 'Will help you come over this challenge'
+	            }),
+	            _react2['default'].createElement(
+	              _materialUiLibCardCardText2['default'],
+	              null,
+	              _react2['default'].createElement(
+	                _materialUiLibListsList2['default'],
+	                null,
+	                _react2['default'].createElement(_materialUiLibListsListItem2['default'], {
+	                  primaryText: buddy.name.first + ' ' + buddy.name.last,
+	                  leftAvatar: _react2['default'].createElement(_materialUiLibAvatar2['default'], { src: 'https://avatars3.githubusercontent.com/u/12455778?v=3&s=460' })
+	                })
+	              )
 	            )
 	          );
 	        }
 
 	        bodyContainer = _react2['default'].createElement(
 	          'div',
-	          { className: 'activity-card-container', style: company ? { maxWidth: 1000 } : { maxWidth: 500 } },
+	          { className: 'activity-card-container', style: !company && !partner ? { maxWidth: 500 } : { maxWidth: 1200 } },
 	          _react2['default'].createElement(
 	            _materialUiLibCardCard2['default'],
-	            { className: 'activity-card', style: { marginRight: 10 } },
+	            { className: 'activity-content', style: { marginRight: 10 } },
 	            _react2['default'].createElement(
 	              _materialUiLibCardCardMedia2['default'],
 	              null,
@@ -47019,7 +47087,12 @@
 	            ),
 	            cardContent
 	          ),
-	          companyContent
+	          _react2['default'].createElement(
+	            'div',
+	            { className: 'company' },
+	            companyContent,
+	            partnerContent
+	          )
 	        );
 
 	        footerContainer = _react2['default'].createElement(
@@ -47042,7 +47115,7 @@
 	              'map'
 	            )
 	          ),
-	          _react2['default'].createElement(
+	          !isCompleted && _react2['default'].createElement(
 	            _materialUiLibFloatingActionButton2['default'],
 	            { onTouchTap: _this._handleGiveUpTap, className: 'giveUp' },
 	            _react2['default'].createElement(
@@ -47054,12 +47127,9 @@
 	          _react2['default'].createElement(
 	            _materialUiLibDialog2['default'],
 	            {
-	              title: 'Dialog With Actions',
+	              title: 'Notice',
 	              actions: [_react2['default'].createElement(_materialUiLibFlatButton2['default'], {
-	                label: 'Cancel',
-	                secondary: true,
-	                onTouchTap: _this._handleCloseDialog }), _react2['default'].createElement(_materialUiLibFlatButton2['default'], {
-	                label: 'Submit',
+	                label: 'GOT IT',
 	                primary: true,
 	                keyboardFocused: true,
 	                onTouchTap: _this._handleCloseDialog })],
@@ -47090,26 +47160,17 @@
 	                label: 'Cancel',
 	                secondary: true,
 	                onTouchTap: _this._handleCloseShowMapDialog })],
+	              title: 'Your learning path',
 	              modal: true,
 	              open: _this.state.openShowMapDialog,
 	              onRequestClose: _this._handleClose
 	            },
-	            _react2['default'].createElement(
-	              'h2',
-	              { className: 'text-center' },
-	              'Your learning path'
-	            ),
 	            _react2['default'].createElement('div', { id: 'learning-tree' })
 	          ),
 	          _react2['default'].createElement(
 	            _materialUiLibDialog2['default'],
 	            {
 	              title: 'Pick another node to learn or retry',
-	              actions: [_react2['default'].createElement(_materialUiLibFlatButton2['default'], {
-	                label: 'Retry last activity',
-	                primary: true,
-	                keyboardFocused: true,
-	                onTouchTap: _this._handleRetryAfterGiveUp })],
 	              modal: true,
 	              open: _this.state.openSelectAnotherNode },
 	            _react2['default'].createElement('div', { id: 'learning-tree' })
@@ -47123,13 +47184,9 @@
 	            actions: [_react2['default'].createElement(_materialUiLibFlatButton2['default'], {
 	              label: 'Reload learning tree',
 	              secondary: true,
-	              onTouchTap: _this._handleReloadLearningTree }), _react2['default'].createElement(_materialUiLibFlatButton2['default'], {
-	              label: 'Retry last activity',
-	              primary: true,
-	              keyboardFocused: true,
-	              onTouchTap: _this._handleRetryAfterGiveUp })],
+	              onTouchTap: _this._handleReloadLearningTree })],
 	            modal: true,
-	            open: todayActivity ? _this.state.openSelectAnotherNode : true },
+	            open: todayActivity ? _this.state.openSelectAnotherNode : currentUser && currentUser.enrollments ? true : false },
 	          _react2['default'].createElement('div', { id: 'learning-tree' })
 	        );
 	      }
@@ -47143,10 +47200,7 @@
 	          { style: { position: 'relative' } },
 	          bodyContainer
 	        ),
-	        footerContainer,
-	        _react2['default'].createElement(_componentsPomodoro2['default'], {
-	          action: 'Undo',
-	          countdown: 3000 })
+	        footerContainer
 	      );
 	    };
 	  }
@@ -47164,7 +47218,8 @@
 	    auth: state.auth,
 	    user: state.user,
 	    story: state.story,
-	    learningPath: state.learningPath
+	    learningPath: state.learningPath,
+	    pairing: state.pairing
 	  };
 	}
 
@@ -47173,7 +47228,8 @@
 	    actions: (0, _redux.bindActionCreators)(ActivityActions, dispatch),
 	    userActions: (0, _redux.bindActionCreators)(UserActions, dispatch),
 	    storyActions: (0, _redux.bindActionCreators)(StoryActions, dispatch),
-	    learningPathActions: (0, _redux.bindActionCreators)(LearningPathActions, dispatch)
+	    pathActions: (0, _redux.bindActionCreators)(PathActions, dispatch),
+	    pairingActions: (0, _redux.bindActionCreators)(PairingActions, dispatch)
 	  };
 	}
 
@@ -49797,8 +49853,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 372 */,
-/* 373 */
+/* 372 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -49813,7 +49868,7 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _muiThemeable = __webpack_require__(374);
+	var _muiThemeable = __webpack_require__(373);
 
 	var _muiThemeable2 = _interopRequireDefault(_muiThemeable);
 
@@ -49880,7 +49935,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 374 */
+/* 373 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -49927,7 +49982,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 375 */
+/* 374 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -50299,244 +50354,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 376 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _materialUiLibTextField = __webpack_require__(327);
-
-	var _materialUiLibTextField2 = _interopRequireDefault(_materialUiLibTextField);
-
-	var _materialUiLibRaisedButton = __webpack_require__(335);
-
-	var _materialUiLibRaisedButton2 = _interopRequireDefault(_materialUiLibRaisedButton);
-
-	var GithubIcon = function GithubIcon(_ref) {
-	  var color = _ref.color;
-	  var style = _ref.style;
-	  return _react2['default'].createElement(
-	    'svg',
-	    { style: _extends({ width: 24, height: 24 }, style), viewBox: '0 0 24 24' },
-	    _react2['default'].createElement('path', { fill: color, d: 'M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z' })
-	  );
-	};
-
-	var AnswerForm = (function (_Component) {
-	  _inherits(AnswerForm, _Component);
-
-	  function AnswerForm() {
-	    var _this = this;
-
-	    _classCallCheck(this, AnswerForm);
-
-	    _get(Object.getPrototypeOf(AnswerForm.prototype), 'constructor', this).apply(this, arguments);
-
-	    this.status = {
-	      idle: {
-	        disabled: false,
-	        buttonText: 'Submit',
-	        buttonWidth: 112
-	      },
-	      pending: {
-	        disabled: true,
-	        buttonText: 'Submitting...',
-	        buttonWidth: 155
-	      }
-	    };
-
-	    this._handleSubmit = function (e) {
-	      e.preventDefault();
-	      var repoUrl = _this.repoInput.getValue();
-	      _this.props.onSubmit(repoUrl);
-	    };
-
-	    this.render = function () {
-	      var currentStatus = _this.status[_this.props.status] || _this.status.idle;
-	      var disabled = currentStatus.disabled;
-	      var buttonText = currentStatus.buttonText;
-	      var buttonWidth = currentStatus.buttonWidth;
-
-	      return _react2['default'].createElement(
-	        'form',
-	        {
-	          onSubmit: _this._handleSubmit,
-	          style: {
-	            display: 'flex',
-	            alignItems: 'center'
-	          } },
-	        _react2['default'].createElement(_materialUiLibTextField2['default'], {
-	          ref: function (node) {
-	            _this.repoInput = node;
-	          },
-	          disabled: disabled,
-	          fullWidth: true,
-	          hintText: 'Github repo url',
-	          style: {
-	            marginRight: 16
-	          } }),
-	        _react2['default'].createElement(_materialUiLibRaisedButton2['default'], {
-	          disabled: disabled,
-	          secondary: true,
-	          type: 'submit',
-	          label: buttonText,
-	          labelPosition: 'after',
-	          style: {
-	            minWidth: buttonWidth
-	          } })
-	      );
-	      // <GithubIcon
-	      //   color='white'
-	      //   style={{
-	      //     verticalAlign: 'middle',
-	      //     display: 'inline-block',
-	      //     marginLeft: 12,
-	      //     marginRight: -8,
-	      //   }} />
-	    };
-	  }
-
-	  _createClass(AnswerForm, null, [{
-	    key: 'propTypes',
-	    value: {
-	      onSubmit: _react.PropTypes.func.isRequired,
-	      status: _react.PropTypes.string.isRequired
-	    },
-	    enumerable: true
-	  }, {
-	    key: 'defaultProps',
-	    value: { status: 'idle' },
-	    enumerable: true
-	  }]);
-
-	  return AnswerForm;
-	})(_react.Component);
-
-	exports['default'] = AnswerForm;
-	module.exports = exports['default'];
-
-/***/ },
-/* 377 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactDom = __webpack_require__(157);
-
-	var _reactDom2 = _interopRequireDefault(_reactDom);
-
-	var _materialUiLibSnackbar = __webpack_require__(378);
-
-	var _materialUiLibSnackbar2 = _interopRequireDefault(_materialUiLibSnackbar);
-
-	var CountdownConfirm = (function (_Component) {
-	  _inherits(CountdownConfirm, _Component);
-
-	  function CountdownConfirm() {
-	    var _this = this;
-
-	    _classCallCheck(this, CountdownConfirm);
-
-	    _get(Object.getPrototypeOf(CountdownConfirm.prototype), 'constructor', this).apply(this, arguments);
-
-	    this._handleActionTouchTap = function () {
-	      _this.snackbar.dismiss();
-	    };
-
-	    this._handleDismiss = function () {
-	      clearInterval(_this.interval);
-	    };
-
-	    this._handleShow = function () {
-	      var _props = _this.props;
-	      var message = _props.message;
-	      var count = _props.countdown;
-	      var onCountdownEnd = _props.onCountdownEnd;
-
-	      var elem = _reactDom2['default'].findDOMNode(_this.snackbar).getElementsByTagName('span')[0];
-	      var updateMessage = function updateMessage() {
-	        if (count < 0) {
-	          _this.snackbar.dismiss();
-	          return onCountdownEnd();
-	        }
-	        elem.innerHTML = message.replace('[count]', count--);
-	        return updateMessage;
-	      };
-
-	      clearInterval(_this.interval);
-	      _this.interval = setInterval(updateMessage(), 1000);
-	    };
-
-	    this.show = function () {
-	      _this.snackbar.show();
-	    };
-
-	    this.dismiss = function () {
-	      _this.snackbar.dismiss();
-	    };
-
-	    this.render = function () {
-	      var _props2 = _this.props;
-	      var action = _props2.action;
-	      var countdown = _props2.countdown;
-
-	      return _react2['default'].createElement(_materialUiLibSnackbar2['default'], {
-	        ref: function (node) {
-	          _this.snackbar = node;
-	        },
-	        message: '',
-	        action: action,
-	        autoHideDuration: 0,
-	        onActionTouchTap: _this._handleActionTouchTap,
-	        onDismiss: _this._handleDismiss,
-	        onShow: _this._handleShow });
-	    };
-	  }
-
-	  return CountdownConfirm;
-	})(_react.Component);
-
-	exports['default'] = CountdownConfirm;
-	module.exports = exports['default'];
-
-/***/ },
-/* 378 */
+/* 375 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -50559,7 +50377,7 @@
 
 	var _transitions2 = _interopRequireDefault(_transitions);
 
-	var _clickAwayable = __webpack_require__(379);
+	var _clickAwayable = __webpack_require__(376);
 
 	var _clickAwayable2 = _interopRequireDefault(_clickAwayable);
 
@@ -50575,7 +50393,7 @@
 
 	var _contextPure2 = _interopRequireDefault(_contextPure);
 
-	var _styleResizable = __webpack_require__(380);
+	var _styleResizable = __webpack_require__(377);
 
 	var _styleResizable2 = _interopRequireDefault(_styleResizable);
 
@@ -50952,7 +50770,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 379 */
+/* 376 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -51011,7 +50829,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 380 */
+/* 377 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -51072,6 +50890,342 @@
 	    _events2.default.off(window, 'resize', this._updateDeviceSize);
 	  }
 	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 378 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _materialUiLibTextField = __webpack_require__(327);
+
+	var _materialUiLibTextField2 = _interopRequireDefault(_materialUiLibTextField);
+
+	var _materialUiLibRaisedButton = __webpack_require__(335);
+
+	var _materialUiLibRaisedButton2 = _interopRequireDefault(_materialUiLibRaisedButton);
+
+	var GithubIcon = function GithubIcon(_ref) {
+	  var color = _ref.color;
+	  var style = _ref.style;
+	  return _react2['default'].createElement(
+	    'svg',
+	    { style: _extends({ width: 24, height: 24 }, style), viewBox: '0 0 24 24' },
+	    _react2['default'].createElement('path', { fill: color, d: 'M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z' })
+	  );
+	};
+
+	var AnswerForm = (function (_Component) {
+	  _inherits(AnswerForm, _Component);
+
+	  function AnswerForm() {
+	    var _this = this;
+
+	    _classCallCheck(this, AnswerForm);
+
+	    _get(Object.getPrototypeOf(AnswerForm.prototype), 'constructor', this).apply(this, arguments);
+
+	    this.status = {
+	      idle: {
+	        disabled: false,
+	        buttonText: 'Submit',
+	        buttonWidth: 112
+	      },
+	      pending: {
+	        disabled: true,
+	        buttonText: 'Submitting...',
+	        buttonWidth: 155
+	      }
+	    };
+
+	    this._handleSubmit = function (e) {
+	      e.preventDefault();
+	      var repoUrl = _this.repoInput.getValue();
+	      _this.props.onSubmit(repoUrl);
+	    };
+
+	    this.render = function () {
+	      var currentStatus = _this.status[_this.props.status] || _this.status.idle;
+	      var disabled = currentStatus.disabled;
+	      var buttonText = currentStatus.buttonText;
+	      var buttonWidth = currentStatus.buttonWidth;
+
+	      return _react2['default'].createElement(
+	        'form',
+	        {
+	          onSubmit: _this._handleSubmit,
+	          style: {
+	            display: 'flex',
+	            alignItems: 'center'
+	          } },
+	        _react2['default'].createElement(_materialUiLibTextField2['default'], {
+	          ref: function (node) {
+	            _this.repoInput = node;
+	          },
+	          disabled: disabled,
+	          fullWidth: true,
+	          hintText: 'Github repo url',
+	          style: {
+	            marginRight: 16
+	          } }),
+	        _react2['default'].createElement(_materialUiLibRaisedButton2['default'], {
+	          disabled: disabled,
+	          secondary: true,
+	          type: 'submit',
+	          label: buttonText,
+	          labelPosition: 'after',
+	          style: {
+	            minWidth: buttonWidth
+	          } })
+	      );
+	      // <GithubIcon
+	      //   color='white'
+	      //   style={{
+	      //     verticalAlign: 'middle',
+	      //     display: 'inline-block',
+	      //     marginLeft: 12,
+	      //     marginRight: -8,
+	      //   }} />
+	    };
+	  }
+
+	  _createClass(AnswerForm, null, [{
+	    key: 'propTypes',
+	    value: {
+	      onSubmit: _react.PropTypes.func.isRequired,
+	      status: _react.PropTypes.string.isRequired
+	    },
+	    enumerable: true
+	  }, {
+	    key: 'defaultProps',
+	    value: { status: 'idle' },
+	    enumerable: true
+	  }]);
+
+	  return AnswerForm;
+	})(_react.Component);
+
+	exports['default'] = AnswerForm;
+	module.exports = exports['default'];
+
+/***/ },
+/* 379 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactDom = __webpack_require__(157);
+
+	var _reactDom2 = _interopRequireDefault(_reactDom);
+
+	var _materialUiLibSnackbar = __webpack_require__(375);
+
+	var _materialUiLibSnackbar2 = _interopRequireDefault(_materialUiLibSnackbar);
+
+	var CountdownConfirm = (function (_Component) {
+	  _inherits(CountdownConfirm, _Component);
+
+	  function CountdownConfirm() {
+	    var _this = this;
+
+	    _classCallCheck(this, CountdownConfirm);
+
+	    _get(Object.getPrototypeOf(CountdownConfirm.prototype), 'constructor', this).apply(this, arguments);
+
+	    this._handleActionTouchTap = function () {
+	      _this.snackbar.dismiss();
+	    };
+
+	    this._handleDismiss = function () {
+	      clearInterval(_this.interval);
+	    };
+
+	    this._handleShow = function () {
+	      var _props = _this.props;
+	      var message = _props.message;
+	      var count = _props.countdown;
+	      var onCountdownEnd = _props.onCountdownEnd;
+
+	      var elem = _reactDom2['default'].findDOMNode(_this.snackbar).getElementsByTagName('span')[0];
+	      var updateMessage = function updateMessage() {
+	        if (count < 0) {
+	          _this.snackbar.dismiss();
+	          return onCountdownEnd();
+	        }
+	        elem.innerHTML = message.replace('[count]', count--);
+	        return updateMessage;
+	      };
+
+	      clearInterval(_this.interval);
+	      _this.interval = setInterval(updateMessage(), 1000);
+	    };
+
+	    this.show = function () {
+	      _this.snackbar.show();
+	    };
+
+	    this.dismiss = function () {
+	      _this.snackbar.dismiss();
+	    };
+
+	    this.render = function () {
+	      var _props2 = _this.props;
+	      var action = _props2.action;
+	      var countdown = _props2.countdown;
+
+	      return _react2['default'].createElement(_materialUiLibSnackbar2['default'], {
+	        ref: function (node) {
+	          _this.snackbar = node;
+	        },
+	        message: '',
+	        action: action,
+	        autoHideDuration: 0,
+	        onActionTouchTap: _this._handleActionTouchTap,
+	        onDismiss: _this._handleDismiss,
+	        onShow: _this._handleShow });
+	    };
+	  }
+
+	  return CountdownConfirm;
+	})(_react.Component);
+
+	exports['default'] = CountdownConfirm;
+	module.exports = exports['default'];
+
+/***/ },
+/* 380 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactDom = __webpack_require__(157);
+
+	var _reactDom2 = _interopRequireDefault(_reactDom);
+
+	var _materialUiLibSnackbar = __webpack_require__(375);
+
+	var _materialUiLibSnackbar2 = _interopRequireDefault(_materialUiLibSnackbar);
+
+	var Pomodoro = (function (_Component) {
+	  _inherits(Pomodoro, _Component);
+
+	  function Pomodoro() {
+	    var _this = this;
+
+	    _classCallCheck(this, Pomodoro);
+
+	    _get(Object.getPrototypeOf(Pomodoro.prototype), 'constructor', this).apply(this, arguments);
+
+	    this._handleActionTouchTap = function () {
+	      _this.snackbar.dismiss();
+	    };
+
+	    this._handleDismiss = function () {
+	      clearInterval(_this.interval);
+	    };
+
+	    this._handleShow = function () {
+	      var _props = _this.props;
+	      var message = _props.message;
+	      var count = _props.countdown;
+	      var onCountdownEnd = _props.onCountdownEnd;
+
+	      var elem = _reactDom2['default'].findDOMNode(_this.snackbar).getElementsByTagName('span')[0];
+	      var updateMessage = function updateMessage() {
+	        if (count < 0) {
+	          _this.snackbar.dismiss();
+	          return onCountdownEnd();
+	        }
+	        elem.innerHTML = message.replace('[count]', count--);
+	        return updateMessage;
+	      };
+
+	      clearInterval(_this.interval);
+	      _this.interval = setInterval(updateMessage(), 1000);
+	    };
+
+	    this.show = function () {
+	      _this.snackbar.show();
+	    };
+
+	    this.dismiss = function () {
+	      _this.snackbar.dismiss();
+	    };
+
+	    this.render = function () {
+	      var _props2 = _this.props;
+	      var action = _props2.action;
+	      var countdown = _props2.countdown;
+
+	      return _react2['default'].createElement(_materialUiLibSnackbar2['default'], {
+	        ref: function (node) {
+	          _this.snackbar = node;
+	        },
+	        open: true,
+	        message: 'Pomodoro times',
+	        action: action,
+	        autoHideDuration: 0,
+	        onActionTouchTap: _this._handleActionTouchTap });
+	    };
+	  }
+
+	  return Pomodoro;
+	})(_react.Component);
+
+	exports['default'] = Pomodoro;
 	module.exports = exports['default'];
 
 /***/ },
@@ -51304,13 +51458,18 @@
 
 	var _reducersStory2 = _interopRequireDefault(_reducersStory);
 
+	var _reducersPairing = __webpack_require__(835);
+
+	var _reducersPairing2 = _interopRequireDefault(_reducersPairing);
+
 	var rootReducer = (0, _redux.combineReducers)({
 	  router: _containersRouter.routerReducer,
 	  auth: _reducersAuth2['default'],
 	  activity: _reducersActivity2['default'],
 	  user: _reducersUser2['default'],
 	  learningPath: _reducersLearningPath2['default'],
-	  story: _reducersStory2['default']
+	  story: _reducersStory2['default'],
+	  pairing: _reducersPairing2['default']
 	});
 
 	exports['default'] = rootReducer;
@@ -66624,13 +66783,14 @@
 
 
 	// module
-	exports.push([module.id, "body {\n  margin: 0;\n  font-family: 'Roboto', sans-serif;\n  font-size: 16px;\n  line-height: 1.4;\n}\n\nbody h1 {\n  color: #800080;\n  padding: 10px;\n}\n\npre[class*=\"language-\"] {\n  margin-bottom: 1em;\n}\n\n.wallpaper {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.footer {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  box-sizing: border-box;\n  width: 100%;\n  padding: 16px;\n  color: white;\n  text-align: center;\n}\n\n.screen {\n  position: absolute;\n  top: 0;\n  left: 0;\n  overflow: auto;\n  width: 100%;\n  height: 100%;\n}\n\n.screen button.showMap {\n  position: absolute !important;\n  top: 0;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 9999;\n  margin: 15px 10px;\n}\n\n.screen button.giveUp {\n  position: absolute !important;\n  top: 65px;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 9999;\n  margin: 15px 10px;\n}\n\n.login {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  max-width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.login .logo {\n  display: block;\n  height: 80px;\n  margin: 16px auto;\n}\n\n.login .or {\n  margin: 2px 0;\n  text-align: center;\n}\n\n.enroll {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.enroll h2 {\n  margin-top: 8px;\n  font-weight: 400;\n  text-align: center;\n}\n\n.activity-card-container {\n  position: relative;\n  /*max-width: 1000px;*/\n  margin: 30px auto 80px;\n}\n\n.activity-card-container .activity-card {\n  float: left;\n  max-width: 495px;\n}\n\n.activity-card-container .activity-card p {\n  margin-top: 0;\n}\n\n.screen-enter {\n  opacity: 0.01;\n}\n\n.screen-enter.screen-enter-active {\n  opacity: 1;\n  -webkit-transition: opacity 250ms 250ms ease-in;\n  transition: opacity 250ms 250ms ease-in;\n}\n\n.screen-leave {\n  opacity: 1;\n}\n\n.screen-leave.screen-leave-active {\n  opacity: 0.01;\n  -webkit-transition: opacity 250ms ease-in;\n  transition: opacity 250ms ease-in;\n}\n\n.hidden {\n  display: none;\n  visibility: hidden;\n  opacity: 0;\n}\n\n.text-center {\n  text-align: center;\n}\n\n.node {\n  cursor: pointer;\n}\n\n.overlay {\n  background-color: #EEE;\n}\n\n.node circle {\n  fill: #fff;\n  stroke: steelblue;\n  stroke-width: 1.5px;\n}\n\n.node text {\n  font-size: 10px;\n  font-family: sans-serif;\n}\n\n.link {\n  fill: none;\n  stroke: #7aa3e5;\n  stroke-width: 3.5px;\n}\n\n.templink {\n  fill: none;\n  stroke: red;\n  stroke-width: 3px;\n}\n\n.ghostCircle.show {\n  display: block;\n}\n\n.ghostCircle,\n.activeDrag .ghostCircle {\n  display: none;\n}", ""]);
+	exports.push([module.id, "body {\n  margin: 0;\n  font-family: 'Roboto', sans-serif;\n  font-size: 16px;\n  line-height: 1.4;\n}\n\nbody h1 {\n  color: #800080;\n  padding: 10px;\n}\n\npre[class*=\"language-\"] {\n  margin-bottom: 1em;\n}\n\n.wallpaper {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.footer {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  box-sizing: border-box;\n  width: 100%;\n  padding: 16px;\n  color: white;\n  text-align: center;\n  z-index: -1;\n}\n\n.screen {\n  position: absolute;\n  top: 0;\n  left: 0;\n  overflow: auto;\n  width: 100%;\n  height: 100%;\n}\n\n.screen button.showMap {\n  position: absolute !important;\n  top: 0;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 9999;\n  margin: 15px 10px;\n}\n\n.screen button.giveUp {\n  position: absolute !important;\n  top: 65px;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 9999;\n  margin: 15px 10px;\n}\n\n.login {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  max-width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.login .logo {\n  display: block;\n  height: 80px;\n  margin: 16px auto;\n}\n\n.login .or {\n  margin: 2px 0;\n  text-align: center;\n}\n\n.enroll {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.enroll h2 {\n  margin-top: 8px;\n  font-weight: 400;\n  text-align: center;\n}\n\n.activity-card-container {\n  position: relative;\n  /*max-width: 1000px;*/\n  margin: 30px auto 80px;\n}\n\n.activity-card-container .activity-content {\n  float: left;\n  width: 65%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .activity-content p {\n  margin-top: 0;\n}\n\n.activity-card-container .company {\n  float: left;\n  width: 30%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .company p {\n  margin-top: 0;\n}\n\n.activity-card-container .company > div {\n  margin-bottom: 10px;\n}\n\n.screen-enter {\n  opacity: 0.01;\n}\n\n.screen-enter.screen-enter-active {\n  opacity: 1;\n  -webkit-transition: opacity 250ms 250ms ease-in;\n  transition: opacity 250ms 250ms ease-in;\n}\n\n.screen-leave {\n  opacity: 1;\n}\n\n.screen-leave.screen-leave-active {\n  opacity: 0.01;\n  -webkit-transition: opacity 250ms ease-in;\n  transition: opacity 250ms ease-in;\n}\n\n.hidden {\n  display: none;\n  visibility: hidden;\n  opacity: 0;\n}\n\n.text-center {\n  text-align: center;\n}\n\n.node {\n  cursor: pointer;\n}\n\n.overlay {\n  background-color: #EEE;\n}\n\n.node circle {\n  fill: #fff;\n  stroke: steelblue;\n  stroke-width: 1.5px;\n}\n\n.node text {\n  font-size: 10px;\n  font-family: sans-serif;\n}\n\n.link {\n  fill: none;\n  stroke: #7aa3e5;\n  stroke-width: 3.5px;\n}\n\n.templink {\n  fill: none;\n  stroke: red;\n  stroke-width: 3px;\n}\n\n.ghostCircle.show {\n  display: block;\n}\n\n.ghostCircle,\n.activeDrag .ghostCircle {\n  display: none;\n}\n\n#learning-tree {\n  width: 720px;\n  height: 250px;\n  background-color: #ccc;\n  display: block;\n}", ""]);
 
 	// exports
 
 
 /***/ },
-/* 834 */
+/* 834 */,
+/* 835 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -66638,95 +66798,57 @@
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
+	exports['default'] = pairing;
 
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	var _immutable = __webpack_require__(185);
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	var INITIAL_STATE = (0, _immutable.Map)({
+	  pairing: null
+	});
 
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	function pairing(state, action) {
+	  if (state === undefined) state = INITIAL_STATE;
 
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactDom = __webpack_require__(157);
-
-	var _reactDom2 = _interopRequireDefault(_reactDom);
-
-	var _materialUiLibSnackbar = __webpack_require__(378);
-
-	var _materialUiLibSnackbar2 = _interopRequireDefault(_materialUiLibSnackbar);
-
-	var Pomodoro = (function (_Component) {
-	  _inherits(Pomodoro, _Component);
-
-	  function Pomodoro() {
-	    var _this = this;
-
-	    _classCallCheck(this, Pomodoro);
-
-	    _get(Object.getPrototypeOf(Pomodoro.prototype), 'constructor', this).apply(this, arguments);
-
-	    this._handleActionTouchTap = function () {
-	      _this.snackbar.dismiss();
-	    };
-
-	    this._handleDismiss = function () {
-	      clearInterval(_this.interval);
-	    };
-
-	    this._handleShow = function () {
-	      var _props = _this.props;
-	      var message = _props.message;
-	      var count = _props.countdown;
-	      var onCountdownEnd = _props.onCountdownEnd;
-
-	      var elem = _reactDom2['default'].findDOMNode(_this.snackbar).getElementsByTagName('span')[0];
-	      var updateMessage = function updateMessage() {
-	        if (count < 0) {
-	          _this.snackbar.dismiss();
-	          return onCountdownEnd();
-	        }
-	        elem.innerHTML = message.replace('[count]', count--);
-	        return updateMessage;
-	      };
-
-	      clearInterval(_this.interval);
-	      _this.interval = setInterval(updateMessage(), 1000);
-	    };
-
-	    this.show = function () {
-	      _this.snackbar.show();
-	    };
-
-	    this.dismiss = function () {
-	      _this.snackbar.dismiss();
-	    };
-
-	    this.render = function () {
-	      var _props2 = _this.props;
-	      var action = _props2.action;
-	      var countdown = _props2.countdown;
-
-	      return _react2['default'].createElement(_materialUiLibSnackbar2['default'], {
-	        ref: function (node) {
-	          _this.snackbar = node;
-	        },
-	        open: true,
-	        message: 'Pomodoro',
-	        action: action,
-	        autoHideDuration: 0,
-	        onActionTouchTap: _this._handleActionTouchTap });
-	    };
+	  switch (action.type) {
+	    case 'GET_PARTNER':
+	      return state;
+	    case 'GET_PARTNER_SUCCESS':
+	      return state.set('pairing', action.result);
+	    case 'GET_PARTNER_FAIL':
+	      return state.set('pairing', null);
+	    default:
+	      return state;
 	  }
+	}
 
-	  return Pomodoro;
-	})(_react.Component);
-
-	exports['default'] = Pomodoro;
 	module.exports = exports['default'];
+
+/***/ },
+/* 836 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	exports.getPartner = getPartner;
+
+	__webpack_require__(237);
+
+	var _constantsActionTypesJs = __webpack_require__(239);
+
+	function getPartner(token, activityId) {
+	  return {
+	    types: ['GET_PARTNER', 'GET_PARTNER_SUCCESS', 'GET_PARTNER_FAIL'],
+	    api: fetch(_constantsActionTypesJs.API_SERVER + '/api/pairing/me', {
+	      method: 'get',
+	      headers: {
+	        'Authorization': 'Bearer ' + token
+	      }
+	    })
+	  };
+	}
 
 /***/ }
 /******/ ]);

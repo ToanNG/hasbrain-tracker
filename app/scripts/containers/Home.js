@@ -19,6 +19,8 @@ import FlatButton from 'material-ui/lib/flat-button';
 import RaisedButton from 'material-ui/lib/raised-button';
 import FloatingActionButton from 'material-ui/lib/floating-action-button';
 import Snackbar from 'material-ui/lib/snackbar';
+import List from 'material-ui/lib/lists/list';
+import ListItem from 'material-ui/lib/lists/list-item';
 
 import ImageComponent from 'components/Image';
 import AnswerForm from 'components/AnswerForm';
@@ -27,7 +29,8 @@ import Pomodoro from 'components/Pomodoro';
 import * as ActivityActions from 'actions/activity';
 import * as UserActions from 'actions/user';
 import * as StoryActions from 'actions/story';
-import * as LearningPathActions from 'actions/learningPath';
+import * as PathActions from 'actions/learningPath';
+import * as PairingActions from 'actions/pairing';
 
 let pubnub = PUBNUB({
   publish_key: 'pub-c-8807fd6d-6f87-486f-9fd6-5869bc37e93a',
@@ -51,7 +54,8 @@ class Home extends Component {
     this._getTodayActivity();
     this._getUser();
     this._getStory();
-    this._getLearningPath();
+    this._getPath();
+    this._getPartner();
   }
 
   componentDidUpdate = () => {
@@ -99,10 +103,16 @@ class Home extends Component {
     storyActions.getCompleteStory(token);
   }
 
-  _getLearningPath = () => {
-    const {auth, learningPathActions} = this.props;
+  _getPath = () => {
+    const {auth, pathActions} = this.props;
     const token = auth.get('token');
-    learningPathActions.getLearningPath(token);
+    pathActions.getLearningPath(token);
+  }
+
+  _getPartner = () => {
+    const { auth, pairingActions } = this.props;
+    const token = auth.get('token');
+    pairingActions.getPartner(token);
   }
 
   _handleClickStart = () => {
@@ -132,7 +142,7 @@ class Home extends Component {
     this.setState({openDialog: false, dialogMessage: null});
   }
 
-  _showMap = () => {
+  _showMap = (canClickOnNode = true) => {
     const { story, auth, actions, activity, user } = this.props;
 
     if(user.get('currentUser').enrollments && user.get('currentUser').enrollments.length > 0) {
@@ -140,6 +150,7 @@ class Home extends Component {
         return story.activity._id;
       }) : [];
 
+      const todayActivity = activity.get('todayActivity');
       const currentUser = user.get('currentUser').enrollments[0] ? user.get('currentUser').enrollments[0] : { _id : 0, name : '', children : null};
 
       var treeData = {
@@ -160,8 +171,7 @@ class Home extends Component {
       var viewerWidth = 720;
       var viewerHeight = 250;
 
-      var tree = d3.layout.tree()
-          .size([viewerHeight, viewerWidth]);
+      var tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
 
       // define a d3 diagonal projection for use by the node paths later on.
       var diagonal = d3.svg.diagonal()
@@ -265,33 +275,34 @@ class Home extends Component {
       }
 
       function click(d) {
-        console.log('clicked');
         if (d3.event.defaultPrevented) return; // click suppressed
-        const todayActivity = activity.get('todayActivity');
-        var flag = true;
-        if(todayActivity) {
-          const { startTime: isStarted } = todayActivity;
-          if(isStarted) {
-            flag = false;
+        if(canClickOnNode) {
+          var flag = true;
+          if(todayActivity) {
+            const { startTime: isStarted } = todayActivity;
+            if(isStarted) {
+              console.log('You must drop out current activity to select another one');
+              flag = false;
+            }
           }
-        }
 
-        if(!d.isComplete && d.nodeType === 'activity') {
-          if(d.dependency && d.dependency.length > 0){
-            d.dependency.map(function(id){
-              if(completedNodes.indexOf(id) === -1){
-                console.log('Does not meet the requirements!');
-                flag = false;
-                return;
-              }
-            });
+          if(!d.isComplete && d.nodeType === 'activity') {
+            if(d.dependency && d.dependency.length > 0){
+              d.dependency.map(function(id){
+                if(completedNodes.indexOf(id) === -1){
+                  console.log('Does not meet the requirements!');
+                  flag = false;
+                  return;
+                }
+              });
+            }
           }
-        }
-        
-        if(flag){
-          const token = auth.get('token');
-          actions.createActivity(token, d._id);
-          that.setState({ openShowMapDialog: false, openSelectAnotherNode : false });
+          
+          if(flag){
+            const token = auth.get('token');
+            actions.createActivity(token, d._id);
+            that.setState({ openShowMapDialog: false, openSelectAnotherNode : false });
+          }
         }
       }
 
@@ -370,7 +381,7 @@ class Home extends Component {
           node.select("circle.nodeCircle")
               .attr("r", 4.5)
               .style("fill", function(d) {
-                  return d.isComplete ? "#3CF53D" : (d.dependency && d.dependency.length > 0) ? "#CCC" : "#fff";
+                return (todayActivity) ? (d._id === todayActivity._id && "#ff4081") : (d.isComplete ? "#3CF53D" : (d.dependency && d.dependency.length > 0) ? "#CCC" : "#fff");
               });
 
           // Transition nodes to their new position.
@@ -450,7 +461,7 @@ class Home extends Component {
       this.setState({
         openShowMapDialog: true
       }, () => {
-        this._showMap();
+        this._showMap(false);
       });
     }
   }
@@ -497,10 +508,11 @@ class Home extends Component {
   }
 
   render = () => {
-    const {activity, user} = this.props;
+    const {activity, user, pairing } = this.props;
     const todayActivity = activity.get('todayActivity');
     const isSubmitting = activity.get('isSubmitting');
     const currentUser = user.get('currentUser');
+    const partner = pairing.get('pairing');
     let bodyContainer, footerContainer;
 
     if (!currentUser) return null;
@@ -514,9 +526,10 @@ class Home extends Component {
         problem,
         knowledge,
         startTime: isStarted,
+        isCompleted
       } = todayActivity;
-      let cardContent, companyContent, showMapButton;
-
+      let cardContent, companyContent, partnerContent, showMapButton;
+      
       if (isStarted) {
         cardContent = <div>
           <Divider />
@@ -542,9 +555,14 @@ class Home extends Component {
             } />
           <CardText>
             <div dangerouslySetInnerHTML={{__html: problem}} />
-            <AnswerForm
+            { (todayActivity.buddyCompleted === false && partner) ?
+              <div>
+                <Divider /><br/><i>You're finished it and you need to help your buddy overcome this challenge to continue!</i>
+              </div> :
+              <AnswerForm
               status={isSubmitting ? 'pending' : 'idle'}
               onSubmit={this._handleSubmit} />
+            }
           </CardText>
         </div>;
       } else {
@@ -575,21 +593,45 @@ class Home extends Component {
       }
 
       if(company) {
-        companyContent = <Card className='activity-card'>
-                <CardTitle
-                  style={{
-                    width: 592,
-                  }}
-                  title={company ? company.name : ''}
-                  subtitle={company ? company.email : ''} />
-                <CardText>
-                  {company ? 'Contact: ' + company.contact : ''}
-                </CardText>
-              </Card>;
+        companyContent = <Card>
+            <CardTitle
+              style={{
+                width: 592,
+              }}
+              title={company ? company.name : ''}
+              subtitle={company ? company.email : ''} />
+            <CardText>
+              <div dangerouslySetInnerHTML={{__html: company.description}} />
+              <br/>
+              <Divider />
+              <br/>               
+              {company ? 'Contact: ' + company.contact : ''}
+            </CardText>
+          </Card>;
       }
 
-      bodyContainer = <div className='activity-card-container' style={company ? {maxWidth: 1000} : {maxWidth: 500}}>
-            <Card className='activity-card' style={{marginRight: 10}}>
+      if(partner) {
+        const buddy = (currentUser._id === partner.studentA._id) ? partner.studentB : partner.studentA;
+        partnerContent = <Card>
+            <CardHeader
+              title="Your buddy"
+              subtitle="Will help you come over this challenge"
+            />
+            <CardText>
+              <List>
+                <ListItem
+                  primaryText={`${buddy.name.first} ${buddy.name.last}`}
+                  leftAvatar={
+                    <Avatar src="https://avatars3.githubusercontent.com/u/12455778?v=3&s=460" />
+                  }
+                  />
+              </List>
+            </CardText>
+          </Card>;
+      }
+
+      bodyContainer = <div className='activity-card-container' style={(!company && !partner ) ? {maxWidth: 500} : {maxWidth: 1200}}>
+            <Card className='activity-content' style={{marginRight: 10}}>
               <CardMedia>
                 <ImageComponent
                   style={{
@@ -606,10 +648,14 @@ class Home extends Component {
               </CardText>
               {cardContent}
             </Card>
-            {companyContent}
+            <div className='company'>
+              {companyContent}
+              {partnerContent}
+            </div>
           </div>;
 
-      footerContainer = <div><CountdownConfirm
+      footerContainer = <div>
+        <CountdownConfirm
           ref={(node) => {
             this.confirm = node;
           }}
@@ -618,16 +664,12 @@ class Home extends Component {
           countdown={5}
           onCountdownEnd={this._handleCountdownEnd} />
         <FloatingActionButton secondary={true} onTouchTap={this._handleShowMapTap} className='showMap'><FontIcon className='material-icons'>map</FontIcon></FloatingActionButton>
-        <FloatingActionButton onTouchTap={this._handleGiveUpTap} className='giveUp'><FontIcon className='material-icons'>exit_to_app</FontIcon></FloatingActionButton>
+        {(!isCompleted) && <FloatingActionButton onTouchTap={this._handleGiveUpTap} className='giveUp'><FontIcon className='material-icons'>exit_to_app</FontIcon></FloatingActionButton>}
         <Dialog
-          title='Dialog With Actions'
+          title='Notice'
           actions={[
             <FlatButton
-              label='Cancel'
-              secondary={true}
-              onTouchTap={this._handleCloseDialog} />,
-            <FlatButton
-              label='Submit'
+              label='GOT IT'
               primary={true}
               keyboardFocused={true}
               onTouchTap={this._handleCloseDialog} />,
@@ -660,26 +702,21 @@ class Home extends Component {
             secondary={true}
             onTouchTap={this._handleCloseShowMapDialog} />
           ]}
+          title='Your learning path'
           modal={true}
           open={this.state.openShowMapDialog}
           onRequestClose={this._handleClose}
         >
-          <h2 className="text-center">Your learning path</h2>
           <div id="learning-tree"></div>
         </Dialog>
 
         <Dialog
           title='Pick another node to learn or retry'
-          actions={[
-            <FlatButton
-              label='Retry last activity'
-              primary={true}
-              keyboardFocused={true}
-              onTouchTap={this._handleRetryAfterGiveUp} />,
-          ]}
           modal={true}
-          open={this.state.openSelectAnotherNode}><div id="learning-tree"></div></Dialog>
-          </div>;
+          open={this.state.openSelectAnotherNode}>
+            <div id="learning-tree"></div>
+        </Dialog>
+      </div>;
     } else {
       footerContainer = <Dialog
           title='Pick another node to learn or retry'
@@ -688,14 +725,9 @@ class Home extends Component {
               label='Reload learning tree'
               secondary={true}
               onTouchTap={this._handleReloadLearningTree} />,
-            <FlatButton
-              label='Retry last activity'
-              primary={true}
-              keyboardFocused={true}
-              onTouchTap={this._handleRetryAfterGiveUp} />,
           ]}
           modal={true}
-          open={todayActivity ? this.state.openSelectAnotherNode : true}><div id="learning-tree"></div></Dialog>;
+          open={todayActivity ? this.state.openSelectAnotherNode : (currentUser && currentUser.enrollments ? true : false )}><div id="learning-tree"></div></Dialog>;
     }
 
     return (
@@ -705,9 +737,6 @@ class Home extends Component {
           {bodyContainer}
         </div>
         {footerContainer}
-        <Pomodoro
-        action={'Undo'}
-        countdown={3000} />
       </div>
     );
   }
@@ -719,7 +748,8 @@ function mapStateToProps(state) {
     auth: state.auth,
     user: state.user,
     story: state.story,
-    learningPath: state.learningPath,
+    learningPath : state.learningPath,
+    pairing : state.pairing,
   };
 }
 
@@ -728,7 +758,8 @@ function mapDispatchToProps(dispatch) {
     actions: bindActionCreators(ActivityActions, dispatch),
     userActions: bindActionCreators(UserActions, dispatch),
     storyActions: bindActionCreators(StoryActions, dispatch),
-    learningPathActions: bindActionCreators(LearningPathActions, dispatch),
+    pathActions: bindActionCreators(PathActions, dispatch),
+    pairingActions: bindActionCreators(PairingActions, dispatch),
   };
 }
 
