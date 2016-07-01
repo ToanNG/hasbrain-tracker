@@ -36,6 +36,7 @@ pre[class*="language-"] {
   padding: 16px;
   color: white;
   text-align: center;
+  z-index: -1;
 }
 
 .screen {
@@ -106,12 +107,26 @@ pre[class*="language-"] {
   /*max-width: 1000px;*/
   margin: 30px auto 80px;
 
-  .activity-card {
+  .activity-content {
     float: left;
-    max-width: 495px;
+    width: 65%;
+    margin-bottom: 20px;
     p {
       margin-top: 0;
     }
+  }
+
+  .company {
+    float: left;
+    width: 30%;
+    margin-bottom: 20px;
+    p {
+      margin-top: 0;
+    }
+  }
+
+  .company > div {
+    margin-bottom: 10px;
   }
 }
 
@@ -180,4 +195,11 @@ pre[class*="language-"] {
 
 .ghostCircle, .activeDrag .ghostCircle{
  display: none;
+}
+
+#learning-tree {
+  width:720px;
+  height:250px;
+  background-color:#ccc;
+  display:block;
 }
