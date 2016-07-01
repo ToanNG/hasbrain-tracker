@@ -4,6 +4,8 @@ import auth from 'reducers/auth';
 import activity from 'reducers/activity';
 import user from 'reducers/user';
 import learningPath from 'reducers/learningPath';
+import story from 'reducers/story';
+import pairing from 'reducers/pairing';
 
 const rootReducer = combineReducers({
   router: routerReducer,
@@ -11,6 +13,8 @@ const rootReducer = combineReducers({
   activity,
   user,
   learningPath,
+  story,
+  pairing,
 });
 
 export default rootReducer;

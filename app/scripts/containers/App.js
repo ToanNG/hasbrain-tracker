@@ -5,6 +5,9 @@ import RouteCSSTransitionGroup from 'containers/RouteCSSTransitionGroup';
 import { switchTo } from 'containers/Router';
 import ImageComponent from 'components/Image';
 import * as AuthActions from 'actions/auth';
+import FontIcon from 'material-ui/lib/font-icon';
+import Dialog from 'material-ui/lib/dialog';
+import FlatButton from 'material-ui/lib/flat-button';
 
 @connect(
   mapStateToProps,
@@ -29,12 +32,12 @@ class App extends Component {
       if (nextAuth.get('isLoggedIn')) {
         actions.setToken(nextAuth.get('token'));
         switchTo('home');
-      } else {
+      } else {;
         switchTo('login');
       }
     }
 
-    if (thisUser.get('currentUser') !== nextUser.get('currentUser')) {
+    if (thisUser.get('currentUser') !== nextUser.get('currentUser') && nextUser.get('currentUser')) {
       if (!nextUser.get('currentUser').enrollments) {
         switchTo('enroll');
       }
@@ -59,7 +62,7 @@ class App extends Component {
 function mapStateToProps(state) {
   return {
     auth: state.auth,
-    user: state.user
+    user: state.user,
   };
 }
 
