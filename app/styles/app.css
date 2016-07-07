@@ -51,7 +51,7 @@ pre[class*="language-"] {
     top: 0;
     right: 0;
     padding: 10px 20px;
-    z-index:9999;
+    z-index:1000;
     margin: 15px 10px;
   }
 
@@ -60,7 +60,7 @@ pre[class*="language-"] {
     top: 65px;
     right: 0;
     padding: 10px 20px;
-    z-index:9999;
+    z-index:1000;
     margin: 15px 10px;
   }
 }
@@ -114,6 +114,9 @@ pre[class*="language-"] {
     p {
       margin-top: 0;
     }
+    img {
+      max-width: 100%;
+    }
   }
 
   .company {
@@ -163,13 +166,13 @@ pre[class*="language-"] {
 }
 
 .overlay{
-  background-color:#EEE;
+  background-color:#fff;
 }
 
 .node circle {
   fill: #fff;
-  stroke: steelblue;
-  stroke-width: 1.5px;
+  /*stroke: steelblue;
+  stroke-width: 1.5px;*/
 }
 
 .node text {
@@ -179,8 +182,8 @@ pre[class*="language-"] {
 
 .link {
   fill: none;
-  stroke: rgb(122, 163, 229);
-  stroke-width: 3.5px;
+  stroke: #ddd;
+  stroke-width: 1.5px;
 }
 
 .templink {
@@ -198,8 +201,8 @@ pre[class*="language-"] {
 }
 
 #learning-tree {
-  width:720px;
-  height:250px;
+  width:1392px;
+  height:500px;
   background-color:#ccc;
   display:block;
 }

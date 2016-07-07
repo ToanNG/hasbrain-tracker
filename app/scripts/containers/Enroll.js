@@ -69,6 +69,7 @@ class Enroll extends Component {
     var treeData = {
       "_id" : value.get('_id'),
       "name":value.get('name'), // root name
+      "nodeType" : "course",
       "children" : JSON.parse(value.get('nodeTree'))
     };
 
@@ -81,8 +82,8 @@ class Enroll extends Component {
     var root, node;
 
     // size of the diagram
-    var viewerWidth = 720;
-    var viewerHeight = 250;
+    var viewerWidth = 1392;
+    var viewerHeight = 700;
 
     var tree = d3.layout.tree()
         .size([viewerHeight, viewerWidth]);
@@ -104,16 +105,23 @@ class Enroll extends Component {
         if (children) {
             var count = children.length;
             var numbDependency = 0;
+            var numbNodeHaveDependency = 0;
             for (var i = 0; i < count; i++) {
                 visit(children[i], visitFn, childrenFn);
                 if(children[i].isDependency){
                   numbDependency++;
+                }
+                if(children[i].dependency && children[i].dependency.length > 0){
+                    numbNodeHaveDependency++;
                 }
             }
             if( numbDependency > 0 && parent.nodeType === 'course' ){
               parent.isDependency = true;
             } else {
               parent.isDependency = false;
+            }
+            if(parent.nodeType === "course" && count === numbNodeHaveDependency) {
+                collapse(parent);
             }
         }
     }
@@ -131,17 +139,6 @@ class Enroll extends Component {
     }, function(d) {
         return d.children && d.children.length > 0 ? d.children : null;
     });
-
-
-    // sort the tree according to the node names
-
-    function sortTree() {
-        tree.sort(function(a, b) {
-            return b.name.toLowerCase() < a.name.toLowerCase() ? 1 : -1;
-        });
-    }
-    // Sort the tree initially incase the JSON isn't in a sorted order.
-    sortTree();
 
     // Define the zoom function for the zoomable tree
 
@@ -161,8 +158,25 @@ class Enroll extends Component {
         .attr("class", "overlay")
         .call(zoomListener);
 
-    // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
 
+    // Helper functions for collapsing and expanding nodes.
+    function collapse(d) {
+        if (d.children) {
+            d._children = d.children;
+            d._children.forEach(collapse);
+            d.children = null;
+        }
+    }
+
+    function expand(d) {
+        if (d._children) {
+            d.children = d._children;
+            d.children.forEach(expand);
+            d._children = null;
+        }
+    }
+
+    // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
     function centerNode(source) {
         var scale = zoomListener.scale();
         var x = -source.y0;
@@ -176,13 +190,32 @@ class Enroll extends Component {
         zoomListener.translate([x, y]);
     }
 
+    // Toggle children function
+    function toggleChildren(d) {
+        if (d.children) {
+            d._children = d.children;
+            d.children = null;
+        } else if (d._children) {
+            d.children = d._children;
+            d._children = null;
+        }
+        return d;
+    }
+
     function click(node) {
         if (d3.event.defaultPrevented) return;
-        if(!node.isDependency || node.dependency && node.dependency.length > 0){
-            console.log('Does not meet the requirements!');
+        if(node.nodeType === 'course'){
+            node = toggleChildren(node);
+            update(node);
+            centerNode(node);
         } else {
-            const token = auth.get('token');
-            enrollmentActions.enroll(token, that.state.selectedPath.get('_id'), node._id);
+            if(!node.isDependency || node.dependency && node.dependency.length > 0){
+                centerNode(node);
+                alert('Does not meet the requirements!');
+            } else {
+                const token = auth.get('token');
+                enrollmentActions.enroll(token, that.state.selectedPath.get('_id'), node._id);
+            }
         }
     }
 
@@ -236,31 +269,48 @@ class Enroll extends Component {
             .attr('class', 'nodeCircle')
             .attr("r", 0)
             .style("fill", function(d) {
-                return d.children || d._children ? "lightsteelblue" : "#fff";
+                return d.children ? "lightsteelblue" : "#fff";
             });
 
         nodeEnter.append("text")
             .attr("x", function(d) {
-                return d.children || d._children ? 10 : 10;
+                return d.children && d.children.length > 0 ? 10 : 10;
             })
             .attr("y", function(d) {
-                return d.children || d._children ? -10 : 0;
+                return d.children && d.children.length > 0 ? -10 : 0;
             })
             .attr("dy", ".35em")
             .attr('class', 'nodeText')
             .attr("text-anchor", function(d) {
-                return d.children || d._children ? "end" : "start";
+                return d.children && d.children.length ? "middle" : "start";
             })
             .text(function(d) {
                 return d.name;
             })
             .style("fill-opacity", 0);
 
+            // Update the text to reflect whether node has children or not.
+            node.select('text')
+                .attr("x", function(d) {
+                    return d.children && d.children.length > 0 ? -10 : 10;
+                })
+                .attr("y", function(d) {
+                    return d.children && d.children.length > 0 ? -10 : 0;
+                })
+                .attr("text-anchor", function(d) {
+                    return d.children && d.children.length ? "middle" : "start";
+                });
+
         // Change the circle fill depending on whether it has children and is collapsed
         node.select("circle.nodeCircle")
-            .attr("r", 4.5)
+            .attr("r", function(d){
+                return (d.nodeType === "course") ? 3 : 4.5;
+            })
             .style("fill", function(d) {
-                return (!d.isDependency) ? "#CCC" : "#fff";
+                return (d.nodeType === "course") ? "#ddd" : ((!d.isDependency) ? "#CCC" : "#fff");
+            })
+            .style("stroke", function(d) {
+                return (d.nodeType === "course") ? "none" : "steelblue";
             });
 
         // Transition nodes to their new position.
@@ -273,6 +323,20 @@ class Enroll extends Component {
         // Fade the text in
         nodeUpdate.select("text")
             .style("fill-opacity", 1);
+
+        // Transition exiting nodes to the parent's new position.
+        var nodeExit = node.exit().transition()
+            .duration(duration)
+            .attr("transform", function(d) {
+                return "translate(" + source.y + "," + source.x + ")";
+            })
+            .remove();
+
+        nodeExit.select("circle")
+            .attr("r", 0);
+
+        nodeExit.select("text")
+            .style("fill-opacity", 0);
 
         // Update the links…
         var link = svgGroup.selectAll("path.link")
@@ -373,6 +437,7 @@ class Enroll extends Component {
               modal={false}
               open={openDialog}
               onRequestClose={this._handleClose}
+              contentStyle={{width: '100%',maxWidth: 'none'}}
             >
               <div id="learning-tree" ref={node => {this.learningTree = node}}></div>
             </Dialog>

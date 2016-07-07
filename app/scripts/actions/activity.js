@@ -75,10 +75,23 @@ export function startActivity(token, activityId) {
   };
 }
 
-export function submitAnswer(token, storyId, targetRepo) {
+export function completeActivity(token, activityId) {
   return {
-    types: [SUBMIT_ANSWER, SUBMIT_ANSWER_SUCCESS, SUBMIT_ANSWER_FAIL],
-    api: fetch(`${API_SERVER}/api/circle/build`, {
+    types: ['COMPLETE_ACTIVITY', 'COMPLETE_ACTIVITY_SUCCESS', 'COMPLETE_ACTIVITY_FAIL'],
+    api: fetch(`${API_SERVER}/api/story/${activityId}/complete`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      }
+    }),
+  };
+}
+
+export function submitAnswer(token, storyId, targetRepo) {
+  return dispatch => {
+    fetch(`${API_SERVER}/api/circle/build`, {
       method: 'post',
       headers: {
         'Accept': 'application/json',
@@ -89,6 +102,25 @@ export function submitAnswer(token, storyId, targetRepo) {
         story: storyId,
         repo: targetRepo,
       }),
-    }),
-  };
+    }).then((data) => {
+      dispatch({ type: SUBMIT_ANSWER_SUCCESS, result: data })
+    }).catch(() => {
+      dispatch({ type: SUBMIT_ANSWER_FAIL })
+    })
+  }
+  // return {
+  //   types: [SUBMIT_ANSWER, SUBMIT_ANSWER_SUCCESS, SUBMIT_ANSWER_FAIL],
+  //   api: fetch(`${API_SERVER}/api/circle/build`, {
+  //     method: 'post',
+  //     headers: {
+  //       'Accept': 'application/json',
+  //       'Content-Type': 'application/json',
+  //       'Authorization': `Bearer ${token}`,
+  //     },
+  //     body: JSON.stringify({
+  //       story: storyId,
+  //       repo: targetRepo,
+  //     }),
+  //   }),
+  // };
 }

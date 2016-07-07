@@ -44158,6 +44158,7 @@
 	            var treeData = {
 	                "_id": value.get('_id'),
 	                "name": value.get('name'), // root name
+	                "nodeType": "course",
 	                "children": JSON.parse(value.get('nodeTree'))
 	            };
 
@@ -44170,8 +44171,8 @@
 	            var root, node;
 
 	            // size of the diagram
-	            var viewerWidth = 720;
-	            var viewerHeight = 250;
+	            var viewerWidth = 1392;
+	            var viewerHeight = 700;
 
 	            var tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
 
@@ -44191,16 +44192,23 @@
 	                if (children) {
 	                    var count = children.length;
 	                    var numbDependency = 0;
+	                    var numbNodeHaveDependency = 0;
 	                    for (var i = 0; i < count; i++) {
 	                        visit(children[i], visitFn, childrenFn);
 	                        if (children[i].isDependency) {
 	                            numbDependency++;
+	                        }
+	                        if (children[i].dependency && children[i].dependency.length > 0) {
+	                            numbNodeHaveDependency++;
 	                        }
 	                    }
 	                    if (numbDependency > 0 && parent.nodeType === 'course') {
 	                        parent.isDependency = true;
 	                    } else {
 	                        parent.isDependency = false;
+	                    }
+	                    if (parent.nodeType === "course" && count === numbNodeHaveDependency) {
+	                        collapse(parent);
 	                    }
 	                }
 	            }
@@ -44219,16 +44227,6 @@
 	                return d.children && d.children.length > 0 ? d.children : null;
 	            });
 
-	            // sort the tree according to the node names
-
-	            function sortTree() {
-	                tree.sort(function (a, b) {
-	                    return b.name.toLowerCase() < a.name.toLowerCase() ? 1 : -1;
-	                });
-	            }
-	            // Sort the tree initially incase the JSON isn't in a sorted order.
-	            sortTree();
-
 	            // Define the zoom function for the zoomable tree
 
 	            function zoom() {
@@ -44241,8 +44239,24 @@
 	            // define the baseSvg, attaching a class for styling and the zoomListener
 	            var baseSvg = d3.select("#learning-tree").append("svg").attr("width", viewerWidth).attr("height", viewerHeight).attr("class", "overlay").call(zoomListener);
 
-	            // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
+	            // Helper functions for collapsing and expanding nodes.
+	            function collapse(d) {
+	                if (d.children) {
+	                    d._children = d.children;
+	                    d._children.forEach(collapse);
+	                    d.children = null;
+	                }
+	            }
 
+	            function expand(d) {
+	                if (d._children) {
+	                    d.children = d._children;
+	                    d.children.forEach(expand);
+	                    d._children = null;
+	                }
+	            }
+
+	            // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
 	            function centerNode(source) {
 	                var scale = zoomListener.scale();
 	                var x = -source.y0;
@@ -44254,13 +44268,32 @@
 	                zoomListener.translate([x, y]);
 	            }
 
+	            // Toggle children function
+	            function toggleChildren(d) {
+	                if (d.children) {
+	                    d._children = d.children;
+	                    d.children = null;
+	                } else if (d._children) {
+	                    d.children = d._children;
+	                    d._children = null;
+	                }
+	                return d;
+	            }
+
 	            function click(node) {
 	                if (d3.event.defaultPrevented) return;
-	                if (!node.isDependency || node.dependency && node.dependency.length > 0) {
-	                    console.log('Does not meet the requirements!');
+	                if (node.nodeType === 'course') {
+	                    node = toggleChildren(node);
+	                    update(node);
+	                    centerNode(node);
 	                } else {
-	                    var token = auth.get('token');
-	                    enrollmentActions.enroll(token, that.state.selectedPath.get('_id'), node._id);
+	                    if (!node.isDependency || node.dependency && node.dependency.length > 0) {
+	                        centerNode(node);
+	                        alert('Does not meet the requirements!');
+	                    } else {
+	                        var token = auth.get('token');
+	                        enrollmentActions.enroll(token, that.state.selectedPath.get('_id'), node._id);
+	                    }
 	                }
 	            }
 
@@ -44307,22 +44340,35 @@
 	                }).on('click', click);
 
 	                nodeEnter.append("circle").attr('class', 'nodeCircle').attr("r", 0).style("fill", function (d) {
-	                    return d.children || d._children ? "lightsteelblue" : "#fff";
+	                    return d.children ? "lightsteelblue" : "#fff";
 	                });
 
 	                nodeEnter.append("text").attr("x", function (d) {
-	                    return d.children || d._children ? 10 : 10;
+	                    return d.children && d.children.length > 0 ? 10 : 10;
 	                }).attr("y", function (d) {
-	                    return d.children || d._children ? -10 : 0;
+	                    return d.children && d.children.length > 0 ? -10 : 0;
 	                }).attr("dy", ".35em").attr('class', 'nodeText').attr("text-anchor", function (d) {
-	                    return d.children || d._children ? "end" : "start";
+	                    return d.children && d.children.length ? "middle" : "start";
 	                }).text(function (d) {
 	                    return d.name;
 	                }).style("fill-opacity", 0);
 
+	                // Update the text to reflect whether node has children or not.
+	                node.select('text').attr("x", function (d) {
+	                    return d.children && d.children.length > 0 ? -10 : 10;
+	                }).attr("y", function (d) {
+	                    return d.children && d.children.length > 0 ? -10 : 0;
+	                }).attr("text-anchor", function (d) {
+	                    return d.children && d.children.length ? "middle" : "start";
+	                });
+
 	                // Change the circle fill depending on whether it has children and is collapsed
-	                node.select("circle.nodeCircle").attr("r", 4.5).style("fill", function (d) {
-	                    return !d.isDependency ? "#CCC" : "#fff";
+	                node.select("circle.nodeCircle").attr("r", function (d) {
+	                    return d.nodeType === "course" ? 3 : 4.5;
+	                }).style("fill", function (d) {
+	                    return d.nodeType === "course" ? "#ddd" : !d.isDependency ? "#CCC" : "#fff";
+	                }).style("stroke", function (d) {
+	                    return d.nodeType === "course" ? "none" : "steelblue";
 	                });
 
 	                // Transition nodes to their new position.
@@ -44332,6 +44378,15 @@
 
 	                // Fade the text in
 	                nodeUpdate.select("text").style("fill-opacity", 1);
+
+	                // Transition exiting nodes to the parent's new position.
+	                var nodeExit = node.exit().transition().duration(duration).attr("transform", function (d) {
+	                    return "translate(" + source.y + "," + source.x + ")";
+	                }).remove();
+
+	                nodeExit.select("circle").attr("r", 0);
+
+	                nodeExit.select("text").style("fill-opacity", 0);
 
 	                // Update the links…
 	                var link = svgGroup.selectAll("path.link").data(links, function (d) {
@@ -44432,7 +44487,8 @@
 	                            actions: actions,
 	                            modal: false,
 	                            open: openDialog,
-	                            onRequestClose: _this._handleClose
+	                            onRequestClose: _this._handleClose,
+	                            contentStyle: { width: '100%', maxWidth: 'none' }
 	                        },
 	                        _react2['default'].createElement('div', { id: 'learning-tree', ref: function (node) {
 	                                _this.learningTree = node;
@@ -46380,6 +46436,10 @@
 
 	var _componentsPomodoro2 = _interopRequireDefault(_componentsPomodoro);
 
+	var _componentsD3Tree = __webpack_require__(837);
+
+	var _componentsD3Tree2 = _interopRequireDefault(_componentsD3Tree);
+
 	var _actionsActivity = __webpack_require__(381);
 
 	var ActivityActions = _interopRequireWildcard(_actionsActivity);
@@ -46420,12 +46480,14 @@
 	      openShowMapDialog: false,
 	      openGiveUpDialog: false,
 	      openSelectAnotherNode: false,
-	      dialogMessage: null
+	      dialogMessage: null,
+	      showLearningTree: false
 	    };
 
 	    this.componentDidMount = function () {
-	      _this._getTodayActivity();
+	      console.log('goi get user');
 	      _this._getUser();
+	      _this._getTodayActivity();
 	      _this._getStory();
 	      _this._getPath();
 	      _this._getPartner();
@@ -46449,13 +46511,30 @@
 	        });
 	      }
 
-	      if (thisUser && thisUser.enrollments) {
-	        var thisPath = _this.props.learningPath.get('path');
-	        var nextPath = nextProps.learningPath.get('path');
-	        if (nextPath !== thisPath && nextPath) {
+	      if (nextUser && nextUser.enrollments && nextProps.story.get('stories')) {
+	        console.log('enrollment da co, show learning tree');
+	        _this.setState({ showLearningTree: true }, function () {
 	          _this._showMap();
+	        });
+	      }
+
+	      /*
+	      if(thisUser && thisUser.enrollments){
+	        const thisPath = this.props.learningPath.get('path');
+	        const nextPath = nextProps.learningPath.get('path');
+	        if(nextPath !== thisPath && nextPath) {
+	          this._showMap();
+	        }
+	         const thisStory = this.props.story.get('stories');
+	        const nextStory = nextProps.story.get('stories');
+	        if(nextStory !== thisStory && nextStory) {
+	          console.log('loadedMap');
+	          this.setState({loadedMap: true}, () => {
+	            this._showMap();
+	          });
 	        }
 	      }
+	      */
 	    };
 
 	    this._getTodayActivity = function () {
@@ -46473,6 +46552,8 @@
 	      var userActions = _props2.userActions;
 
 	      var token = auth.get('token');
+	      console.log('_getUser');
+	      console.log(token);
 	      userActions.getUser(token);
 	    };
 
@@ -46483,6 +46564,7 @@
 
 	      var token = auth.get('token');
 	      storyActions.getCompleteStory(token);
+	      console.log('get story');
 	    };
 
 	    this._getPath = function () {
@@ -46507,7 +46589,7 @@
 	      _this.confirm.show();
 	    };
 
-	    this._handleCountdownEnd = function () {
+	    this._handleClickSkip = function () {
 	      var _props6 = _this.props;
 	      var auth = _props6.auth;
 	      var activity = _props6.activity;
@@ -46515,14 +46597,25 @@
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
-	      actions.startActivity(token, todayActivity._id);
+	      actions.completeActivity(token, todayActivity._id);
 	    };
 
-	    this._handleSubmit = function (repoUrl) {
+	    this._handleCountdownEnd = function () {
 	      var _props7 = _this.props;
 	      var auth = _props7.auth;
 	      var activity = _props7.activity;
 	      var actions = _props7.actions;
+
+	      var token = auth.get('token');
+	      var todayActivity = activity.get('todayActivity');
+	      actions.startActivity(token, todayActivity._id);
+	    };
+
+	    this._handleSubmit = function (repoUrl) {
+	      var _props8 = _this.props;
+	      var auth = _props8.auth;
+	      var activity = _props8.activity;
+	      var actions = _props8.actions;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -46538,308 +46631,134 @@
 	      _this.setState({ openDialog: false, dialogMessage: null });
 	    };
 
-	    this._showMap = function () {
-	      var canClickOnNode = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
-	      var _props8 = _this.props;
-	      var story = _props8.story;
-	      var auth = _props8.auth;
-	      var actions = _props8.actions;
-	      var activity = _props8.activity;
-	      var user = _props8.user;
+	    this._recursive = function (parent, visitFn, childrenFn) {
+	      if (!parent) return;
 
-	      if (user.get('currentUser').enrollments && user.get('currentUser').enrollments.length > 0) {
+	      visitFn(parent);
+
+	      var children = childrenFn(parent);
+	      if (children) {
+	        var count = children.length;
+	        var numbCompleted = 0;
+	        for (var i = 0; i < count; i++) {
+	          _this._recursive(children[i], visitFn, childrenFn);
+	          if (children[i].isComplete) {
+	            numbCompleted++;
+	          }
+	        }
+	        if (count === numbCompleted) {
+	          parent.isComplete = true;
+	        } else {
+	          parent.isComplete = false;
+	        }
+	      }
+	    };
+
+	    this._showMap1 = function () {
+	      var _props9 = _this.props;
+	      var story = _props9.story;
+	      var auth = _props9.auth;
+	      var actions = _props9.actions;
+	      var activity = _props9.activity;
+	      var user = _props9.user;
+
+	      var completedNodes = [];
+	      var currentUser = user.get('currentUser');
+	      if (currentUser && currentUser.enrollments && currentUser.enrollments.length > 0) {
 	        var treeData;
-	        var completedNodes;
-	        var maxLabelLength;
-	        var i;
-	        var duration;
-	        var root, node;
-	        var that;
-	        var viewerWidth;
-	        var viewerHeight;
-	        var tree;
-	        var diagonal;
-	        var zoomListener;
-	        var baseSvg;
-	        var svgGroup;
 
-	        (function () {
-
-	          // A recursive helper function for performing some setup by walking through all nodes
-
-	          var visit = function visit(parent, visitFn, childrenFn) {
-	            if (!parent) return;
-
-	            visitFn(parent);
-
-	            var children = childrenFn(parent);
-	            if (children) {
-	              var count = children.length;
-	              var numbCompleted = 0;
-	              for (var i = 0; i < count; i++) {
-	                visit(children[i], visitFn, childrenFn);
-	                if (children[i].isComplete) {
-	                  numbCompleted++;
-	                }
-	              }
-	              if (count === numbCompleted) {
-	                parent.isComplete = true;
-	              } else {
-	                parent.isComplete = false;
-	              }
-	            }
-	          }
-
-	          // Call visit function to establish maxLabelLength
-	          ;
-
-	          // sort the tree according to the node names
-
-	          var sortTree = function sortTree() {
-	            tree.sort(function (a, b) {
-	              return b.name.toLowerCase() < a.name.toLowerCase() ? 1 : -1;
-	            });
-	          }
-	          // Sort the tree initially incase the JSON isn't in a sorted order.
-	          ;
-
-	          // Define the zoom function for the zoomable tree
-
-	          var zoom = function zoom() {
-	            svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-	          }
-
-	          // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
-	          ;
-
-	          // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
-
-	          var centerNode = function centerNode(source) {
-	            var scale = zoomListener.scale();
-	            var x = -source.y0;
-	            var y = -source.x0;
-	            x = x * scale + viewerWidth / 2;
-	            y = y * scale + viewerHeight / 2;
-	            d3.select('g').transition().duration(duration).attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
-	            zoomListener.scale(scale);
-	            zoomListener.translate([x, y]);
-	          };
-
-	          var click = function click(d) {
-	            if (d3.event.defaultPrevented) return; // click suppressed
-	            if (canClickOnNode) {
-	              var flag = true;
-	              if (todayActivity) {
-	                var isStarted = todayActivity.startTime;
-
-	                if (isStarted) {
-	                  console.log('You must drop out current activity to select another one');
-	                  flag = false;
-	                }
-	              }
-
-	              if (!d.isComplete && d.nodeType === 'activity') {
-	                if (d.dependency && d.dependency.length > 0) {
-	                  d.dependency.map(function (id) {
-	                    if (completedNodes.indexOf(id) === -1) {
-	                      console.log('Does not meet the requirements!');
-	                      flag = false;
-	                      return;
-	                    }
-	                  });
-	                }
-	              }
-
-	              if (flag) {
-	                var token = auth.get('token');
-	                actions.createActivity(token, d._id);
-	                that.setState({ openShowMapDialog: false, openSelectAnotherNode: false });
-	              }
-	            }
-	          };
-
-	          var update = function update(source) {
-	            // Compute the new height, function counts total children of root node and sets tree height accordingly.
-	            // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
-	            // This makes the layout more consistent.
-	            var levelWidth = [1];
-	            var childCount = function childCount(level, n) {
-
-	              if (n.children && n.children.length > 0) {
-	                if (levelWidth.length <= level + 1) levelWidth.push(0);
-
-	                levelWidth[level + 1] += n.children.length;
-	                n.children.forEach(function (d) {
-	                  childCount(level + 1, d);
-	                });
-	              }
-	            };
-	            childCount(0, root);
-	            var newHeight = d3.max(levelWidth) * 25; // 25 pixels per line 
-	            tree = tree.size([newHeight, viewerWidth]);
-
-	            // Compute the new tree layout.
-	            var nodes = tree.nodes(root).reverse(),
-	                links = tree.links(nodes);
-
-	            // Set widths between levels based on maxLabelLength.
-	            nodes.forEach(function (d) {
-	              d.y = d.depth * (maxLabelLength * 10); //maxLabelLength * 10px
-	              // alternatively to keep a fixed scale one can set a fixed depth per level
-	              // Normalize for fixed-depth by commenting out below line
-	              // d.y = (d.depth * 500); //500px per level.
-	            });
-
-	            // Update the nodes…
-	            node = svgGroup.selectAll("g.node").data(nodes, function (d) {
-	              return d.id || (d.id = ++i);
-	            });
-
-	            // Enter any new nodes at the parent's previous position.
-	            var nodeEnter = node.enter().append("g").attr("class", "node").attr("transform", function (d) {
-	              return "translate(" + source.y0 + "," + source.x0 + ")";
-	            }).on('click', click);
-
-	            nodeEnter.append("circle").attr('class', 'nodeCircle').attr("r", 0).style("fill", function (d) {
-	              return d.children ? "lightsteelblue" : "#fff";
-	            });
-
-	            nodeEnter.append("text").attr("x", function (d) {
-	              return d.children || d._children ? 10 : 10;
-	            }).attr("y", function (d) {
-	              return d.children || d._children ? -10 : 0;
-	            }).attr("dy", ".35em").attr('class', 'nodeText').attr("text-anchor", function (d) {
-	              return d.children || d._children ? "end" : "start";
-	            }).text(function (d) {
-	              return d.name;
-	            }).style("fill-opacity", 0);
-
-	            // Change the circle fill depending on whether it has children and is collapsed
-	            // Style for node
-	            node.select("circle.nodeCircle").attr("r", 4.5).style("fill", function (d) {
-	              return todayActivity ? d._id === todayActivity._id && "#ff4081" : d.isComplete ? "#3CF53D" : d.dependency && d.dependency.length > 0 ? "#CCC" : "#fff";
-	            });
-
-	            // Transition nodes to their new position.
-	            var nodeUpdate = node.transition().duration(duration).attr("transform", function (d) {
-	              return "translate(" + d.y + "," + d.x + ")";
-	            });
-
-	            // Fade the text in
-	            nodeUpdate.select("text").style("fill-opacity", 1);
-
-	            // Update the links…
-	            var link = svgGroup.selectAll("path.link").data(links, function (d) {
-	              return d.target.id;
-	            });
-
-	            // Enter any new links at the parent's previous position.
-	            link.enter().insert("path", "g").attr("class", "link").attr("d", function (d) {
-	              var o = {
-	                x: source.x0,
-	                y: source.y0
-	              };
-	              return diagonal({
-	                source: o,
-	                target: o
-	              });
-	            });
-
-	            // Transition links to their new position.
-	            link.transition().duration(duration).attr("d", diagonal);
-
-	            // Transition exiting nodes to the parent's new position.
-	            link.exit().transition().duration(duration).attr("d", function (d) {
-	              var o = {
-	                x: source.x,
-	                y: source.y
-	              };
-	              return diagonal({
-	                source: o,
-	                target: o
-	              });
-	            }).remove();
-
-	            // Stash the old positions for transition.
-	            nodes.forEach(function (d) {
-	              d.x0 = d.x;
-	              d.y0 = d.y;
-	            });
-	          }
-
-	          // Append a group which holds all nodes and which the zoom Listener can act upon.
-	          ;
-
+	        var _ret = (function () {
 	          var completedActivityArr = story.get('stories') ? story.get('stories').map(function (story) {
 	            return story.activity._id;
 	          }) : [];
 
 	          var todayActivity = activity.get('todayActivity');
-	          var currentUser = user.get('currentUser').enrollments[0] ? user.get('currentUser').enrollments[0] : { _id: 0, name: '', children: null };
+	          var userData = currentUser.enrollments[0] ? currentUser.enrollments[0] : { _id: 0, name: '', nodeType: 'course', isCollapse: false, isComplete: false, isLocked: false, children: null };
 
 	          treeData = {
-	            "_id": currentUser.learningPath._id,
-	            "name": currentUser.learningPath.name, // root name
-	            "children": JSON.parse(currentUser.learningPath.nodeTree)
+	            "_id": userData.learningPath._id,
+	            "name": userData.learningPath.name,
+	            "nodeType": "course",
+	            "isCollapse": false,
+	            "isComplete": false,
+	            "isLocked": false,
+	            "children": JSON.parse(userData.learningPath.nodeTree)
 	          };
-	          completedNodes = [];
-	          maxLabelLength = 0;
 
-	          // Misc. variables
-	          i = 0;
-	          duration = 750;
-	          that = _this;
+	          // Detect nodes which is completed
+	          _this._recursive(treeData, function (d) {
+	            d.isComplete = completedActivityArr.indexOf(d._id) > -1 ? true : false;
 
-	          // size of the diagram
-	          viewerWidth = 720;
-	          viewerHeight = 250;
-	          tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
-
-	          // define a d3 diagonal projection for use by the node paths later on.
-	          diagonal = d3.svg.diagonal().projection(function (d) {
-	            return [d.y, d.x];
-	          });
-	          visit(treeData, function (d) {
-	            maxLabelLength = Math.max(d.name.length, maxLabelLength);
-
-	            d.nodeType = d.nodeType;
-	            if (completedActivityArr.indexOf(d._id) > -1) {
-	              d.isComplete = true;
-	            } else {
-	              d.isComplete = false;
-	            }
-
-	            if (d.isComplete) {
-	              completedNodes.push(d._id);
-	            }
-	          }, function (d) {
-	            return d.children && d.children.length > 0 ? d.children : null;
-	          });
-
-	          // Loop through treeData to get all of completed nodes.
-	          visit(treeData, function (d) {
 	            if (d.isComplete && completedNodes.indexOf(d._id) === -1) {
 	              completedNodes.push(d._id);
 	            }
 	          }, function (d) {
 	            return d.children && d.children.length > 0 ? d.children : null;
-	          });sortTree();zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+	          });
 
-	          // define the baseSvg, attaching a class for styling and the zoomListener
-	          d3.select("svg").remove();
-	          baseSvg = d3.select("#learning-tree").insert("svg").attr("width", viewerWidth).attr("height", viewerHeight).attr("class", "overlay").call(zoomListener);
-	          svgGroup = baseSvg.append("g");
+	          // Detect nodes which should collapse
+	          _this._recursive(treeData, function (d) {
+	            var children = d.children;
+	            if (children) {
+	              var count = children.length;
+	              var numbNodeHaveDependency = 0;
+	              for (var i = 0; i < count; i++) {
+	                if (children[i].dependency && children[i].dependency.length > 0 && completedNodes.filter(function (elem) {
+	                  return children[i].dependency.indexOf(elem) > -1;
+	                }).length != children[i].dependency.length) {
+	                  numbNodeHaveDependency++;
+	                }
+	              }
+	              if (d.nodeType === "course" && count === numbNodeHaveDependency) {
+	                d.isCollapse = true;
+	              }
+	            }
 
-	          // Define the root
-	          root = treeData;
-	          root.x0 = viewerHeight / 2;
-	          root.y0 = 0;
+	            if (d.dependency && d.dependency.length > 0) {
+	              if (completedNodes.filter(function (elem) {
+	                return d.dependency.indexOf(elem) > -1;
+	              }).length === d.dependency.length) {
+	                d.isLocked = false;
+	              } else {
+	                d.isLocked = true;
+	              }
+	            } else {
+	              d.isLocked = false;
+	            }
+	          }, function (d) {
+	            return d.children && d.children.length > 0 ? d.children : null;
+	          });
 
-	          // Layout the tree initially and center on the root node.
-	          update(root);
-	          centerNode(root);
+	          // Detect which nodes is locked
+	          _this._recursive(treeData, function (d) {
+	            var children = d.children;
+	            if (children) {
+	              var count = children.length;
+	              var numbLockedNodes = 0;
+	              for (var i = 0; i < count; i++) {
+	                if (children[i].isLocked) {
+	                  numbLockedNodes++;
+	                }
+	              }
+	              if (d.nodeType === "course" && count === numbLockedNodes) {
+	                d.isLocked = true;
+	              }
+	            }
+	          }, function (d) {
+	            return d.children && d.children.length > 0 ? d.children : null;
+	          });
+
+	          return {
+	            v: treeData
+	          };
 	        })();
+
+	        if (typeof _ret === 'object') return _ret.v;
 	      }
+	    };
+
+	    this._showMap = function () {
+	      var canClickOnNode = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
 	    };
 
 	    this._handleShowMapTap = function () {
@@ -46877,10 +46796,10 @@
 	    };
 
 	    this._handleFireGiveUpDialog = function () {
-	      var _props9 = _this.props;
-	      var auth = _props9.auth;
-	      var actions = _props9.actions;
-	      var activity = _props9.activity;
+	      var _props10 = _this.props;
+	      var auth = _props10.auth;
+	      var actions = _props10.actions;
+	      var activity = _props10.activity;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -46893,15 +46812,11 @@
 	      });
 	    };
 
-	    this._handleRetryAfterGiveUp = function () {
-	      console.log('Retry button clicked');
-	    };
-
 	    this.render = function () {
-	      var _props10 = _this.props;
-	      var activity = _props10.activity;
-	      var user = _props10.user;
-	      var pairing = _props10.pairing;
+	      var _props11 = _this.props;
+	      var activity = _props11.activity;
+	      var user = _props11.user;
+	      var pairing = _props11.pairing;
 
 	      var todayActivity = activity.get('todayActivity');
 	      var isSubmitting = activity.get('isSubmitting');
@@ -46921,6 +46836,7 @@
 	        var knowledge = todayActivity.knowledge;
 	        var isStarted = todayActivity.startTime;
 	        var isCompleted = todayActivity.isCompleted;
+	        var tester = todayActivity.tester;
 
 	        var cardContent = undefined,
 	            companyContent = undefined,
@@ -47000,15 +46916,22 @@
 	                ),
 	                color: _materialUiLibStylesColors2['default'].red500,
 	                backgroundColor: _materialUiLibStylesColors2['default'].grey100 }) }),
-	            _react2['default'].createElement(_materialUiLibCardCardText2['default'], { dangerouslySetInnerHTML: { __html: problem } }),
+	            tester ? _react2['default'].createElement(_materialUiLibCardCardText2['default'], { dangerouslySetInnerHTML: { __html: problem } }) : _react2['default'].createElement(_materialUiLibCardCardText2['default'], { dangerouslySetInnerHTML: { __html: knowledge } }),
 	            _react2['default'].createElement(_materialUiLibDivider2['default'], null),
 	            _react2['default'].createElement(
 	              _materialUiLibCardCardActions2['default'],
 	              null,
-	              _react2['default'].createElement(_materialUiLibFlatButton2['default'], {
+	              tester ? _react2['default'].createElement(_materialUiLibFlatButton2['default'], {
 	                label: 'Learn this!',
 	                primary: true,
-	                onClick: _this._handleClickStart })
+	                onClick: _this._handleClickStart }) : _react2['default'].createElement(
+	                'div',
+	                null,
+	                _react2['default'].createElement(_materialUiLibFlatButton2['default'], {
+	                  label: 'Finish this activity',
+	                  primary: true,
+	                  onClick: _this._handleClickSkip })
+	              )
 	            )
 	          );
 	        }
@@ -47061,7 +46984,7 @@
 
 	        bodyContainer = _react2['default'].createElement(
 	          'div',
-	          { className: 'activity-card-container', style: !company && !partner ? { maxWidth: 500 } : { maxWidth: 1200 } },
+	          { className: 'activity-card-container', style: !company && !partner ? { maxWidth: 800 } : { maxWidth: 1200 } },
 	          _react2['default'].createElement(
 	            _materialUiLibCardCard2['default'],
 	            { className: 'activity-content', style: { marginRight: 10 } },
@@ -47096,14 +47019,6 @@
 	        footerContainer = _react2['default'].createElement(
 	          'div',
 	          null,
-	          _react2['default'].createElement(_componentsCountdownConfirm2['default'], {
-	            ref: function (node) {
-	              _this.confirm = node;
-	            },
-	            message: 'The activity starts after [count]s',
-	            action: 'undo',
-	            countdown: 5,
-	            onCountdownEnd: _this._handleCountdownEnd }),
 	          _react2['default'].createElement(
 	            _materialUiLibFloatingActionButton2['default'],
 	            { secondary: true, onTouchTap: _this._handleShowMapTap, className: 'showMap' },
@@ -47122,6 +47037,14 @@
 	              'exit_to_app'
 	            )
 	          ),
+	          _react2['default'].createElement(_componentsCountdownConfirm2['default'], {
+	            ref: function (node) {
+	              _this.confirm = node;
+	            },
+	            message: 'The activity starts after [count]s',
+	            action: 'undo',
+	            countdown: 5,
+	            onCountdownEnd: _this._handleCountdownEnd }),
 	          _react2['default'].createElement(
 	            _materialUiLibDialog2['default'],
 	            {
@@ -47155,37 +47078,54 @@
 	            _materialUiLibDialog2['default'],
 	            {
 	              actions: [_react2['default'].createElement(_materialUiLibFlatButton2['default'], {
-	                label: 'Cancel',
+	                label: 'Close',
 	                secondary: true,
 	                onTouchTap: _this._handleCloseShowMapDialog })],
 	              title: 'Your learning path',
 	              modal: true,
 	              open: _this.state.openShowMapDialog,
-	              onRequestClose: _this._handleClose
+	              onRequestClose: _this._handleClose,
+	              contentStyle: { width: '100%', maxWidth: 'none' },
+	              autoDetectWindowHeight: false
 	            },
 	            _react2['default'].createElement('div', { id: 'learning-tree' })
 	          ),
 	          _react2['default'].createElement(
 	            _materialUiLibDialog2['default'],
 	            {
-	              title: 'Pick another node to learn or retry',
+	              actions: [_react2['default'].createElement(_materialUiLibFlatButton2['default'], {
+	                label: 'Reload learning tree',
+	                secondary: true,
+	                onTouchTap: _this._handleReloadLearningTree })],
 	              modal: true,
-	              open: _this.state.openSelectAnotherNode },
+	              open: _this.state.openSelectAnotherNode,
+	              contentStyle: { width: '100%', maxWidth: 'none' },
+	              autoDetectWindowHeight: false
+	            },
 	            _react2['default'].createElement('div', { id: 'learning-tree' })
 	          )
 	        );
 	      } else {
 	        footerContainer = _react2['default'].createElement(
-	          _materialUiLibDialog2['default'],
-	          {
-	            title: 'Pick another node to learn or retry',
-	            actions: [_react2['default'].createElement(_materialUiLibFlatButton2['default'], {
-	              label: 'Reload learning tree',
-	              secondary: true,
-	              onTouchTap: _this._handleReloadLearningTree })],
-	            modal: true,
-	            open: todayActivity ? _this.state.openSelectAnotherNode : currentUser && currentUser.enrollments ? true : false },
-	          _react2['default'].createElement('div', { id: 'learning-tree' })
+	          'div',
+	          null,
+	          _react2['default'].createElement(
+	            _materialUiLibDialog2['default'],
+	            {
+	              actions: [_react2['default'].createElement(_materialUiLibFlatButton2['default'], {
+	                label: 'Reload learning tree',
+	                secondary: true,
+	                onTouchTap: _this._handleReloadLearningTree })],
+	              modal: true,
+	              contentStyle: { width: '100%', maxWidth: 'none' },
+	              //autoDetectWindowHeight={false}
+	              open: _this.state.showLearningTree
+	            },
+	            _react2['default'].createElement(_componentsD3Tree2['default'], {
+	              viewerWidth: 1392,
+	              viewerHeight: 500,
+	              treeData: _this._showMap1() })
+	          )
 	        );
 	      }
 
@@ -47233,6 +47173,410 @@
 
 	exports['default'] = Home;
 	module.exports = exports['default'];
+
+	// console.log('goi showMap');
+	// const { story, auth, actions, activity, user } = this.props;
+
+	// if(user.get('currentUser') && user.get('currentUser').enrollments && user.get('currentUser').enrollments.length > 0) {
+	//   const completedActivityArr = story.get('stories') ? story.get('stories').map(function(story){
+	//     return story.activity._id;
+	//   }) : [];
+
+	//   const todayActivity = activity.get('todayActivity');
+	//   const currentUser = user.get('currentUser').enrollments[0] ? user.get('currentUser').enrollments[0] : { _id : 0, name : '', children : null};
+
+	//   var treeData = {
+	//     "_id" : currentUser.learningPath._id,
+	//     "name": currentUser.learningPath.name, // root name
+	//     "nodeType" : "course",
+	//     "children" : JSON.parse(currentUser.learningPath.nodeTree)
+	//   };
+
+	//   var completedNodes = [];
+	//   var maxLabelLength = 0;
+	//   // Misc. variables
+	//   var i = 0;
+	//   var duration = 750;
+	//   var root, node, defaultNode;
+	//   var that = this;
+
+	//   // size of the diagram
+	//   var viewerWidth = 1392;
+	//   var viewerHeight = 700;
+
+	//   var tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
+
+	//   // define a d3 diagonal projection for use by the node paths later on.
+	//   var diagonal = d3.svg.diagonal()
+	//       .projection(function(d) {
+	//           return [d.y, d.x];
+	//       });
+
+	//   // A recursive helper function for performing some setup by walking through all nodes
+	//   function visit(parent, visitFn, childrenFn) {
+	//       if (!parent) return;
+
+	//       visitFn(parent);
+
+	//       var children = childrenFn(parent);
+	//       if (children) {
+	//           var count = children.length;
+	//           var numbCompleted = 0;
+	//           for (var i = 0; i < count; i++) {
+	//               visit(children[i], visitFn, childrenFn);
+	//               if(children[i].isComplete){
+	//                 numbCompleted++;
+	//               }
+	//           }
+	//           if( count === numbCompleted ){
+	//             parent.isComplete = true;
+	//           } else {
+	//             parent.isComplete = false;
+	//           }
+	//       }
+	//   }
+
+	//   // Call visit function to establish maxLabelLength
+	//   visit(treeData, function(d) {
+	//       maxLabelLength = Math.max(d.name.length, maxLabelLength);
+
+	//       d.nodeType = d.nodeType;
+	//       if( (completedActivityArr.indexOf(d._id) > -1) ) {
+	//         d.isComplete = true;
+	//       } else {
+	//         d.isComplete = false;
+	//       }
+
+	//       if(d.isComplete){
+	//         completedNodes.push(d._id);
+	//       }
+
+	//   }, function(d) {
+	//       return d.children && d.children.length > 0 ? d.children : null;
+	//   });
+
+	//   // Loop through treeData to get all of completed nodes.
+	//   visit(treeData, function(d) {
+	//       if(d.isComplete && completedNodes.indexOf(d._id) === -1){
+	//         completedNodes.push(d._id);
+	//       }
+
+	//       var children = d.children;
+	//       if (children) {
+	//           var count = children.length;
+	//           var numbNodeHaveDependency = 0;
+	//           for (var i = 0; i < count; i++) {
+	//               if(children[i].dependency && children[i].dependency.length > 0 && completedNodes.filter(function (elem) { return children[i].dependency.indexOf(elem) > -1; }).length != children[i].dependency.length){
+	//                 numbNodeHaveDependency++;
+	//               }
+	//           }
+	//           if(d.nodeType === "course" && count === numbNodeHaveDependency) {
+	//             collapse(d);
+	//           }
+	//       }
+
+	//       if(d.nodeType === "activity" && d.isComplete === false) {
+	//         if(d.dependency && d.dependency.length > 0){
+	//           if(completedNodes.filter(function (elem) { return d.dependency.indexOf(elem) > -1; }).length === d.dependency.length){
+	//             if(defaultNode === undefined) {
+	//               defaultNode = d;
+	//             }
+	//           }
+	//         } else {
+	//           if(defaultNode === undefined) {
+	//             defaultNode = d;
+	//           }
+	//         }
+	//       }
+	//   }, function(d) {
+	//       return d.children && d.children.length > 0 ? d.children : null;
+	//   });
+
+	//   // Define the zoom function for the zoomable tree
+	//   function zoom() {
+	//       svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+	//   }
+
+	//   // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
+	//   var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+
+	//   // define the baseSvg, attaching a class for styling and the zoomListener
+	//   d3.select("svg").remove(); // remove the old one to not duplicated create when re-open
+	//   var baseSvg = d3.select("#learning-tree").insert("svg")
+	//       .attr("width", viewerWidth)
+	//       .attr("height", viewerHeight)
+	//       .attr("class", "overlay")
+	//       .call(zoomListener);
+
+	//   // Helper functions for collapsing and expanding nodes.
+	//   function collapse(d) {
+	//       if (d.children) {
+	//           d._children = d.children;
+	//           d._children.forEach(collapse);
+	//           d.children = null;
+	//       }
+	//   }
+
+	//   function expand(d) {
+	//       if (d._children) {
+	//           d.children = d._children;
+	//           d.children.forEach(expand);
+	//           d._children = null;
+	//       }
+	//   }
+
+	//   // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
+	//   function centerNode(source) {
+	//       var scale = zoomListener.scale();
+	//       var x = -source.y0;
+	//       var y = -source.x0;
+	//       x = x * scale + viewerWidth / 2;
+	//       y = y * scale + viewerHeight / 2;
+	//       d3.select('g').transition()
+	//           .duration(duration)
+	//           .attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
+	//       zoomListener.scale(scale);
+	//       zoomListener.translate([x, y]);
+
+	//       //svgGroup.transition().attr("transform", "translate(1000, 1000)");
+	//   }
+
+	//    // Toggle children function
+	//   function toggleChildren(d) {
+	//       if (d.children) {
+	//           d._children = d.children;
+	//           d.children = null;
+	//       } else if (d._children) {
+	//           d.children = d._children;
+	//           d._children = null;
+	//       }
+	//       return d;
+	//   }
+
+	//   function click(d) {
+	//     if (d3.event.defaultPrevented) return; // click suppressed
+	//     if(d.nodeType === 'course'){
+	//       d = toggleChildren(d);
+	//       update(d);
+	//       centerNode(d);
+	//     } else {
+	//       if(canClickOnNode) {
+	//         var flag = true;
+	//         if(todayActivity) {
+	//           const { startTime: isStarted } = todayActivity;
+	//           if(isStarted) {
+	//             alert('You must drop out current activity to select another one');
+	//             centerNode(d);
+	//             flag = false;
+	//           }
+	//         }
+
+	//         if(!d.isComplete && d.nodeType === 'activity') {
+	//           if(d.dependency && d.dependency.length > 0){
+	//             d.dependency.map(function(id){
+	//               if(completedNodes.indexOf(id) === -1){
+	//                 alert('Does not meet the requirements! You must finish another nodes to active this one!');
+	//                 centerNode(d);
+	//                 flag = false;
+	//                 return;
+	//               }
+	//             });
+	//           }
+
+	//           if(flag){
+	//             const token = auth.get('token');
+	//             actions.createActivity(token, d._id);
+	//             that.setState({ openShowMapDialog: false, openSelectAnotherNode : false });
+	//           }
+	//         }
+	//       }
+	//     }
+	//   }
+
+	//   function update(source) {
+	//       // Compute the new height, function counts total children of root node and sets tree height accordingly.
+	//       // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
+	//       // This makes the layout more consistent.
+	//       var levelWidth = [1];
+	//       var childCount = function(level, n) {
+
+	//           if (n.children && n.children.length > 0) {
+	//               if (levelWidth.length <= level + 1) levelWidth.push(0);
+
+	//               levelWidth[level + 1] += n.children.length;
+	//               n.children.forEach(function(d) {
+	//                   childCount(level + 1, d);
+	//               });
+	//           }
+	//       };
+	//       childCount(0, root);
+	//       var newHeight = d3.max(levelWidth) * 25; // 25 pixels per line 
+	//       tree = tree.size([newHeight, viewerWidth]);
+
+	//       // Compute the new tree layout.
+	//       var nodes = tree.nodes(root).reverse(),
+	//           links = tree.links(nodes);
+
+	//       // Set widths between levels based on maxLabelLength.
+	//       nodes.forEach(function(d) {
+	//           d.y = (d.depth * (maxLabelLength * 10)); //maxLabelLength * 10px
+	//           // alternatively to keep a fixed scale one can set a fixed depth per level
+	//           // Normalize for fixed-depth by commenting out below line
+	//           // d.y = (d.depth * 500); //500px per level.
+	//       });
+
+	//       // Update the nodes…
+	//       node = svgGroup.selectAll("g.node")
+	//           .data(nodes, function(d) {
+	//               return d.id || (d.id = ++i);
+	//           });
+
+	//       // Enter any new nodes at the parent's previous position.
+	//       var nodeEnter = node.enter().append("g")
+	//           .attr("class", "node")
+	//           .attr("transform", function(d) {
+	//               return "translate(" + source.y0 + "," + source.x0 + ")";
+	//           })
+	//           .on('click', click);
+
+	//       nodeEnter.append("circle")
+	//           .attr('class', 'nodeCircle');
+
+	//       nodeEnter.append("text")
+	//           .attr("x", function(d) {
+	//               return d.children && d.children.length ? -10 : 10;
+	//           })
+	//           .attr("y", function(d) {
+	//               return d.children && d.children.length ? -10 : 0;
+	//           })
+	//           .attr("dy", ".35em")
+	//           .attr('class', 'nodeText')
+	//           .attr("text-anchor", function(d) {
+	//               return d.children && d.children.length ? "middle" : "start";
+	//           })
+	//           .text(function(d) {
+	//               return d.name;
+	//           })
+	//           .style("fill-opacity", 0)
+	//           .style("text-decoration", function(d){
+	//             return d.isComplete ? "line-through" : "none";
+	//           })
+	//           .style("fill", function(d){
+	//             return d.nodeType === "course" ? "#ddd" : "#000";
+	//           });
+
+	//         // Update the text to reflect whether node has children or not.
+	//         node.select('text')
+	//           .attr("x", function(d) {
+	//               return d.children && d.children.length > 0 ? -10 : 10;
+	//           })
+	//           .attr("y", function(d) {
+	//               return d.children && d.children.length > 0 ? -10 : 0;
+	//           })
+	//           .attr("text-anchor", function(d) {
+	//               return d.children && d.children.length ? "middle" : "start";
+	//           });
+
+	//       // Change the circle fill depending on whether it has children and is collapsed
+	//       // Style for node
+	//       node.select("circle.nodeCircle")
+	//           .attr("r", function(d){
+	//             return (d.nodeType === "course") ? 3 : 4.5;
+	//           })
+	//           .style("fill", function(d) {
+	//             return (todayActivity && d._id === todayActivity._id && that.state.openSelectAnotherNode === false) ? "#ff4081" : (d.nodeType === "course" ? "#ddd" : (d.isComplete ? "#ddd" : (d.dependency && d.dependency.length > 0) ? ( (completedNodes.filter(function (elem) { return d.dependency.indexOf(elem) > -1; }).length == d.dependency.length) ? "#fff" : "#CCC" ) : "#fff"));
+	//           })
+	//           .style("stroke", function(d) {
+	//               return d.nodeType === "activity" && ((d.dependency && d.dependency.length > 0) ? ( (completedNodes.filter(function (elem) { return d.dependency.indexOf(elem) > -1; }).length == d.dependency.length) ? "steelblue" : "none" ) : "steelblue");
+	//           });
+
+	//       // Transition nodes to their new position.
+	//       var nodeUpdate = node.transition()
+	//           .duration(duration)
+	//           .attr("transform", function(d) {
+	//               return "translate(" + d.y + "," + d.x + ")";
+	//           });
+
+	//       // Fade the text in
+	//       nodeUpdate.select("text")
+	//           .style("fill-opacity", function(d){
+	//             return d.isComplete ? 0.5 : 1;
+	//           });
+
+	//       // Transition exiting nodes to the parent's new position.
+	//       var nodeExit = node.exit().transition()
+	//           .duration(duration)
+	//           .attr("transform", function(d) {
+	//               return "translate(" + source.y + "," + source.x + ")";
+	//           })
+	//           .remove();
+
+	//       nodeExit.select("circle")
+	//           .attr("r", 0);
+
+	//       nodeExit.select("text")
+	//           .style("fill-opacity", 0);
+
+	//       // Update the links…
+	//       var link = svgGroup.selectAll("path.link")
+	//           .data(links, function(d) {
+	//               return d.target.id;
+	//           });
+
+	//       // Enter any new links at the parent's previous position.
+	//       link.enter().insert("path", "g")
+	//           .attr("class", "link")
+	//           .attr("d", function(d) {
+	//               var o = {
+	//                   x: source.x0,
+	//                   y: source.y0
+	//               };
+	//               return diagonal({
+	//                   source: o,
+	//                   target: o
+	//               });
+	//           });
+
+	//       // Transition links to their new position.
+	//       link.transition()
+	//           .duration(duration)
+	//           .attr("d", diagonal);
+
+	//       // Transition exiting nodes to the parent's new position.
+	//       link.exit().transition()
+	//           .duration(duration)
+	//           .attr("d", function(d) {
+	//               var o = {
+	//                   x: source.x,
+	//                   y: source.y
+	//               };
+	//               return diagonal({
+	//                   source: o,
+	//                   target: o
+	//               });
+	//           })
+	//           .remove();
+
+	//       // Stash the old positions for transition.
+	//       nodes.forEach(function(d) {
+	//           d.x0 = d.x;
+	//           d.y0 = d.y;
+	//       });
+	//   }
+
+	//   // Append a group which holds all nodes and which the zoom Listener can act upon.
+	//   var svgGroup = baseSvg.append("g");
+
+	//   // Define the root
+	//   root = treeData;
+	//   root.x0 = viewerHeight / 2;
+	//   root.y0 = 0;
+
+	//   // Layout the tree initially and center on the root node.
+	//   update(root);
+	//   //centerNode(root.children[0].children[0]);
+	//   centerNode(defaultNode);
+	// }
 
 /***/ },
 /* 351 */
@@ -51239,6 +51583,7 @@
 	exports.giveUpActivity = giveUpActivity;
 	exports.createActivity = createActivity;
 	exports.startActivity = startActivity;
+	exports.completeActivity = completeActivity;
 	exports.submitAnswer = submitAnswer;
 
 	__webpack_require__(237);
@@ -51307,10 +51652,23 @@
 	  };
 	}
 
-	function submitAnswer(token, storyId, targetRepo) {
+	function completeActivity(token, activityId) {
 	  return {
-	    types: [_constantsActionTypes.SUBMIT_ANSWER, _constantsActionTypes.SUBMIT_ANSWER_SUCCESS, _constantsActionTypes.SUBMIT_ANSWER_FAIL],
-	    api: fetch(_constantsActionTypes.API_SERVER + '/api/circle/build', {
+	    types: ['COMPLETE_ACTIVITY', 'COMPLETE_ACTIVITY_SUCCESS', 'COMPLETE_ACTIVITY_FAIL'],
+	    api: fetch(_constantsActionTypes.API_SERVER + '/api/story/' + activityId + '/complete', {
+	      method: 'post',
+	      headers: {
+	        'Accept': 'application/json',
+	        'Content-Type': 'application/json',
+	        'Authorization': 'Bearer ' + token
+	      }
+	    })
+	  };
+	}
+
+	function submitAnswer(token, storyId, targetRepo) {
+	  return function (dispatch) {
+	    fetch(_constantsActionTypes.API_SERVER + '/api/circle/build', {
 	      method: 'post',
 	      headers: {
 	        'Accept': 'application/json',
@@ -51321,8 +51679,27 @@
 	        story: storyId,
 	        repo: targetRepo
 	      })
-	    })
+	    }).then(function (data) {
+	      dispatch({ type: _constantsActionTypes.SUBMIT_ANSWER_SUCCESS, result: data });
+	    })['catch'](function () {
+	      dispatch({ type: _constantsActionTypes.SUBMIT_ANSWER_FAIL });
+	    });
 	  };
+	  // return {
+	  //   types: [SUBMIT_ANSWER, SUBMIT_ANSWER_SUCCESS, SUBMIT_ANSWER_FAIL],
+	  //   api: fetch(`${API_SERVER}/api/circle/build`, {
+	  //     method: 'post',
+	  //     headers: {
+	  //       'Accept': 'application/json',
+	  //       'Content-Type': 'application/json',
+	  //       'Authorization': `Bearer ${token}`,
+	  //     },
+	  //     body: JSON.stringify({
+	  //       story: storyId,
+	  //       repo: targetRepo,
+	  //     }),
+	  //   }),
+	  // };
 	}
 
 /***/ },
@@ -51590,6 +51967,12 @@
 
 	    case _constantsActionTypes.START_ACTIVITY_SUCCESS:
 	      return state.set('todayActivity', action.result);
+
+	    case 'COMPLETE_ACTIVITY':
+	      return state.set('isSubmitting', true);
+
+	    case 'COMPLETE_ACTIVITY_FAIL':
+	      return state.set('isSubmitting', false);
 
 	    case _constantsActionTypes.SUBMIT_ANSWER:
 	      return state.set('isSubmitting', true);
@@ -66781,7 +67164,7 @@
 
 
 	// module
-	exports.push([module.id, "body {\n  margin: 0;\n  font-family: 'Roboto', sans-serif;\n  font-size: 16px;\n  line-height: 1.4;\n}\n\nbody h1 {\n  color: #800080;\n  padding: 10px;\n}\n\npre[class*=\"language-\"] {\n  margin-bottom: 1em;\n}\n\n.wallpaper {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.footer {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  box-sizing: border-box;\n  width: 100%;\n  padding: 16px;\n  color: white;\n  text-align: center;\n  z-index: -1;\n}\n\n.screen {\n  position: absolute;\n  top: 0;\n  left: 0;\n  overflow: auto;\n  width: 100%;\n  height: 100%;\n}\n\n.screen button.showMap {\n  position: absolute !important;\n  top: 0;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 9999;\n  margin: 15px 10px;\n}\n\n.screen button.giveUp {\n  position: absolute !important;\n  top: 65px;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 9999;\n  margin: 15px 10px;\n}\n\n.login {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  max-width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.login .logo {\n  display: block;\n  height: 80px;\n  margin: 16px auto;\n}\n\n.login .or {\n  margin: 2px 0;\n  text-align: center;\n}\n\n.enroll {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.enroll h2 {\n  margin-top: 8px;\n  font-weight: 400;\n  text-align: center;\n}\n\n.activity-card-container {\n  position: relative;\n  /*max-width: 1000px;*/\n  margin: 30px auto 80px;\n}\n\n.activity-card-container .activity-content {\n  float: left;\n  width: 65%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .activity-content p {\n  margin-top: 0;\n}\n\n.activity-card-container .company {\n  float: left;\n  width: 30%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .company p {\n  margin-top: 0;\n}\n\n.activity-card-container .company > div {\n  margin-bottom: 10px;\n}\n\n.screen-enter {\n  opacity: 0.01;\n}\n\n.screen-enter.screen-enter-active {\n  opacity: 1;\n  -webkit-transition: opacity 250ms 250ms ease-in;\n  transition: opacity 250ms 250ms ease-in;\n}\n\n.screen-leave {\n  opacity: 1;\n}\n\n.screen-leave.screen-leave-active {\n  opacity: 0.01;\n  -webkit-transition: opacity 250ms ease-in;\n  transition: opacity 250ms ease-in;\n}\n\n.hidden {\n  display: none;\n  visibility: hidden;\n  opacity: 0;\n}\n\n.text-center {\n  text-align: center;\n}\n\n.node {\n  cursor: pointer;\n}\n\n.overlay {\n  background-color: #EEE;\n}\n\n.node circle {\n  fill: #fff;\n  stroke: steelblue;\n  stroke-width: 1.5px;\n}\n\n.node text {\n  font-size: 10px;\n  font-family: sans-serif;\n}\n\n.link {\n  fill: none;\n  stroke: #7aa3e5;\n  stroke-width: 3.5px;\n}\n\n.templink {\n  fill: none;\n  stroke: red;\n  stroke-width: 3px;\n}\n\n.ghostCircle.show {\n  display: block;\n}\n\n.ghostCircle,\n.activeDrag .ghostCircle {\n  display: none;\n}\n\n#learning-tree {\n  width: 720px;\n  height: 250px;\n  background-color: #ccc;\n  display: block;\n}", ""]);
+	exports.push([module.id, "body {\n  margin: 0;\n  font-family: 'Roboto', sans-serif;\n  font-size: 16px;\n  line-height: 1.4;\n}\n\nbody h1 {\n  color: #800080;\n  padding: 10px;\n}\n\npre[class*=\"language-\"] {\n  margin-bottom: 1em;\n}\n\n.wallpaper {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.footer {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  box-sizing: border-box;\n  width: 100%;\n  padding: 16px;\n  color: white;\n  text-align: center;\n  z-index: -1;\n}\n\n.screen {\n  position: absolute;\n  top: 0;\n  left: 0;\n  overflow: auto;\n  width: 100%;\n  height: 100%;\n}\n\n.screen button.showMap {\n  position: absolute !important;\n  top: 0;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 1000;\n  margin: 15px 10px;\n}\n\n.screen button.giveUp {\n  position: absolute !important;\n  top: 65px;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 1000;\n  margin: 15px 10px;\n}\n\n.login {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  max-width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.login .logo {\n  display: block;\n  height: 80px;\n  margin: 16px auto;\n}\n\n.login .or {\n  margin: 2px 0;\n  text-align: center;\n}\n\n.enroll {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.enroll h2 {\n  margin-top: 8px;\n  font-weight: 400;\n  text-align: center;\n}\n\n.activity-card-container {\n  position: relative;\n  /*max-width: 1000px;*/\n  margin: 30px auto 80px;\n}\n\n.activity-card-container .activity-content {\n  float: left;\n  width: 65%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .activity-content p {\n  margin-top: 0;\n}\n\n.activity-card-container .activity-content img {\n  max-width: 100%;\n}\n\n.activity-card-container .company {\n  float: left;\n  width: 30%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .company p {\n  margin-top: 0;\n}\n\n.activity-card-container .company > div {\n  margin-bottom: 10px;\n}\n\n.screen-enter {\n  opacity: 0.01;\n}\n\n.screen-enter.screen-enter-active {\n  opacity: 1;\n  -webkit-transition: opacity 250ms 250ms ease-in;\n  transition: opacity 250ms 250ms ease-in;\n}\n\n.screen-leave {\n  opacity: 1;\n}\n\n.screen-leave.screen-leave-active {\n  opacity: 0.01;\n  -webkit-transition: opacity 250ms ease-in;\n  transition: opacity 250ms ease-in;\n}\n\n.hidden {\n  display: none;\n  visibility: hidden;\n  opacity: 0;\n}\n\n.text-center {\n  text-align: center;\n}\n\n.node {\n  cursor: pointer;\n}\n\n.overlay {\n  background-color: #fff;\n}\n\n.node circle {\n  fill: #fff;\n  /*stroke: steelblue;\n  stroke-width: 1.5px;*/\n}\n\n.node text {\n  font-size: 10px;\n  font-family: sans-serif;\n}\n\n.link {\n  fill: none;\n  stroke: #ddd;\n  stroke-width: 1.5px;\n}\n\n.templink {\n  fill: none;\n  stroke: red;\n  stroke-width: 3px;\n}\n\n.ghostCircle.show {\n  display: block;\n}\n\n.ghostCircle,\n.activeDrag .ghostCircle {\n  display: none;\n}\n\n#learning-tree {\n  width: 1392px;\n  height: 500px;\n  background-color: #ccc;\n  display: block;\n}", ""]);
 
 	// exports
 
@@ -66847,6 +67230,279 @@
 	    })
 	  };
 	}
+
+/***/ },
+/* 837 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	    value: true
+	});
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactDom = __webpack_require__(157);
+
+	var _reactDom2 = _interopRequireDefault(_reactDom);
+
+	var D3Tree = (function (_Component) {
+	    _inherits(D3Tree, _Component);
+
+	    function D3Tree() {
+	        var _this = this;
+
+	        _classCallCheck(this, D3Tree);
+
+	        _get(Object.getPrototypeOf(D3Tree.prototype), 'constructor', this).apply(this, arguments);
+
+	        this.componentDidMount = function () {
+	            _this._showMap();
+	        };
+
+	        this._showMap = function () {
+	            console.log('goi showMap trong D3Tree component');
+	            var _props = _this.props;
+	            var treeData = _props.treeData;
+	            var viewerWidth = _props.viewerWidth;
+	            var viewerHeight = _props.viewerHeight;
+
+	            var maxLabelLength = 0;
+	            var i = 0;
+	            var duration = 750;
+	            var root, node, defaultNode;
+	            var that = _this;
+
+	            var tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
+
+	            var diagonal = d3.svg.diagonal().projection(function (d) {
+	                return [d.y, d.x];
+	            });
+
+	            function visit(parent, visitFn, childrenFn) {
+	                if (!parent) return;
+
+	                visitFn(parent);
+
+	                var children = childrenFn(parent);
+	                if (children) {
+	                    var count = children.length;
+	                    for (var i = 0; i < count; i++) {
+	                        visit(children[i], visitFn, childrenFn);
+	                    }
+	                }
+	            }
+
+	            visit(treeData, function (d) {
+	                maxLabelLength = Math.max(d.name.length, maxLabelLength);
+	                if (d.nodeType === 'activity' && !d.isLocked && defaultNode === undefined) {
+	                    defaultNode = d;
+	                }
+	            }, function (d) {
+	                return d.children && d.children.length > 0 ? d.children : null;
+	            });
+
+	            function zoom() {
+	                svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+	            }
+
+	            var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+
+	            d3.select("svg").remove();
+	            var baseSvg = d3.select("#learning-tree").insert("svg").attr("width", viewerWidth).attr("height", viewerHeight).attr("class", "overlay").call(zoomListener);
+
+	            function collapse(d) {
+	                if (d.children) {
+	                    d._children = d.children;
+	                    d._children.forEach(collapse);
+	                    d.children = null;
+	                }
+	            }
+
+	            function expand(d) {
+	                if (d._children) {
+	                    d.children = d._children;
+	                    d.children.forEach(expand);
+	                    d._children = null;
+	                }
+	            }
+
+	            function centerNode(source) {
+	                var scale = zoomListener.scale();
+	                var x = -source.y0;
+	                var y = -source.x0;
+	                x = x * scale + viewerWidth / 2;
+	                y = y * scale + viewerHeight / 2;
+	                d3.select('g').transition().duration(duration).attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
+	                zoomListener.scale(scale);
+	                zoomListener.translate([x, y]);
+	            }
+
+	            function toggleChildren(d) {
+	                if (d.children) {
+	                    d._children = d.children;
+	                    d.children = null;
+	                } else if (d._children) {
+	                    d.children = d._children;
+	                    d._children = null;
+	                }
+	                return d;
+	            }
+
+	            function click(d) {
+	                if (d3.event.defaultPrevented) return; // click suppressed
+	                console.log(d);
+	            }
+
+	            function update(source) {
+	                var levelWidth = [1];
+	                var childCount = function childCount(level, n) {
+
+	                    if (n.children && n.children.length > 0) {
+	                        if (levelWidth.length <= level + 1) levelWidth.push(0);
+
+	                        levelWidth[level + 1] += n.children.length;
+	                        n.children.forEach(function (d) {
+	                            childCount(level + 1, d);
+	                        });
+	                    }
+	                };
+	                childCount(0, root);
+	                var newHeight = d3.max(levelWidth) * 25;
+	                tree = tree.size([newHeight, viewerWidth]);
+
+	                var nodes = tree.nodes(root).reverse(),
+	                    links = tree.links(nodes);
+
+	                nodes.forEach(function (d) {
+	                    d.y = d.depth * (maxLabelLength * 10);
+	                });
+
+	                node = svgGroup.selectAll("g.node").data(nodes, function (d) {
+	                    return d.id || (d.id = ++i);
+	                });
+
+	                var nodeEnter = node.enter().append("g").attr("class", "node").attr("transform", function (d) {
+	                    return "translate(" + source.y0 + "," + source.x0 + ")";
+	                }).on('click', click);
+
+	                nodeEnter.append("circle").attr('class', 'nodeCircle');
+
+	                nodeEnter.append("text").attr("x", function (d) {
+	                    return d.children && d.children.length ? -10 : 10;
+	                }).attr("y", function (d) {
+	                    return d.children && d.children.length ? -10 : 0;
+	                }).attr("dy", ".35em").attr('class', 'nodeText').attr("text-anchor", function (d) {
+	                    return d.children && d.children.length ? "middle" : "start";
+	                }).text(function (d) {
+	                    return d.name;
+	                }).style("fill-opacity", 0).style("text-decoration", function (d) {
+	                    return d.isComplete ? "line-through" : "none";
+	                }).style("fill", function (d) {
+	                    return d.nodeType === "course" ? "#ddd" : "#000";
+	                });
+
+	                node.select('text').attr("x", function (d) {
+	                    return d.children && d.children.length > 0 ? -10 : 10;
+	                }).attr("y", function (d) {
+	                    return d.children && d.children.length > 0 ? -10 : 0;
+	                }).attr("text-anchor", function (d) {
+	                    return d.children && d.children.length ? "middle" : "start";
+	                });
+
+	                node.select("circle.nodeCircle").attr("r", function (d) {
+	                    return d.nodeType === "course" ? 3 : 4.5;
+	                }).style("fill", function (d) {
+	                    return d.nodeType === "course" ? "#ddd" : d.isComplete ? "#ddd" : d.isLocked ? "#CCC" : "#fff";
+	                }).style("stroke", function (d) {
+	                    return d.nodeType === "course" || d.isLocked ? "none" : "steelblue";
+	                });
+
+	                var nodeUpdate = node.transition().duration(duration).attr("transform", function (d) {
+	                    return "translate(" + d.y + "," + d.x + ")";
+	                });
+
+	                nodeUpdate.select("text").style("fill-opacity", function (d) {
+	                    return d.isComplete ? 0.5 : 1;
+	                });
+
+	                var nodeExit = node.exit().transition().duration(duration).attr("transform", function (d) {
+	                    return "translate(" + source.y + "," + source.x + ")";
+	                }).remove();
+
+	                nodeExit.select("circle").attr("r", 0);
+
+	                nodeExit.select("text").style("fill-opacity", 0);
+
+	                var link = svgGroup.selectAll("path.link").data(links, function (d) {
+	                    return d.target.id;
+	                });
+
+	                link.enter().insert("path", "g").attr("class", "link").attr("d", function (d) {
+	                    var o = {
+	                        x: source.x0,
+	                        y: source.y0
+	                    };
+	                    return diagonal({
+	                        source: o,
+	                        target: o
+	                    });
+	                });
+
+	                link.transition().duration(duration).attr("d", diagonal);
+
+	                link.exit().transition().duration(duration).attr("d", function (d) {
+	                    var o = {
+	                        x: source.x,
+	                        y: source.y
+	                    };
+	                    return diagonal({
+	                        source: o,
+	                        target: o
+	                    });
+	                }).remove();
+
+	                nodes.forEach(function (d) {
+	                    d.x0 = d.x;
+	                    d.y0 = d.y;
+	                });
+	            }
+
+	            var svgGroup = baseSvg.append("g");
+
+	            root = treeData;
+	            root.x0 = viewerHeight / 2;
+	            root.y0 = 0;
+
+	            update(root);
+	            if (defaultNode) {
+	                centerNode(defaultNode);
+	            } else {
+	                centerNode(root);
+	            }
+	        };
+
+	        this.render = function () {
+	            return _react2['default'].createElement('div', { id: 'learning-tree' });
+	        };
+	    }
+
+	    return D3Tree;
+	})(_react.Component);
+
+	exports['default'] = D3Tree;
+	module.exports = exports['default'];
 
 /***/ }
 /******/ ]);
