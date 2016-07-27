@@ -3,12 +3,12 @@ import ReactDOM from 'react-dom';
 import Snackbar from 'material-ui/lib/snackbar';
 
 class CountdownConfirm extends Component {
-  _handleActionTouchTap = () => {
-    this.snackbar.dismiss();
-  }
 
-  _handleDismiss = () => {
-    clearInterval(this.interval);
+  constructor(props) {
+    super(props);
+    this.state = {
+      open: false,
+    };
   }
 
   _handleShow = () => {
@@ -16,7 +16,7 @@ class CountdownConfirm extends Component {
     let elem = ReactDOM.findDOMNode(this.snackbar).getElementsByTagName('span')[0];
     let updateMessage = () => {
       if (count < 0) {
-        this.snackbar.dismiss();
+        this.dismiss();
         return onCountdownEnd();
       }
       elem.innerHTML = message.replace('[count]', count--);
@@ -28,27 +28,43 @@ class CountdownConfirm extends Component {
   }
 
   show = () => {
-    this.snackbar.show();
+    this.setState({ open: true });
   }
 
   dismiss = () => {
-    this.snackbar.dismiss();
+    this.setState({ open: false });
+    clearInterval(this.interval);
+  }
+
+  stop = () => {
+    clearInterval(this.interval);
+  }
+
+  handleRequestClose = (reason) => {
+    if (reason !== 'clickaway') {
+      this.dismiss();
+    }
+  }
+
+  handleActionTouchTap = () => {
+    this.setState({ open: false });
   }
 
   render = () => {
-    const {action, countdown} = this.props;
+    const { action, message } = this.props;
 
     return (
       <Snackbar
         ref={(node) => {
           this.snackbar = node;
         }}
+        open={this.state.open}
         message=''
         action={action}
         autoHideDuration={0}
-        onActionTouchTap={this._handleActionTouchTap}
-        onDismiss={this._handleDismiss}
-        onShow={this._handleShow} />
+        onActionTouchTap={this.handleActionTouchTap}
+        onRequestClose={this.handleRequestClose}
+        style={{zIndex: 1000}} />
     );
   }
 }

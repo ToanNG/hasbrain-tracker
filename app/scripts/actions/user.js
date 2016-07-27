@@ -18,3 +18,20 @@ export function getUser(token) {
     }),
   };
 }
+
+export function updateLevelTips(token, levelTips){
+  return {
+    types: ['UPDATE_LEVELTIPS', 'UPDATE_LEVELTIPS_SUCCESS', 'UPDATE_LEVELTIPS_FAIL'],
+    api: fetch(`${API_SERVER}/api/user/leveltips`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        levelTips: levelTips
+      })
+    })
+  };
+}

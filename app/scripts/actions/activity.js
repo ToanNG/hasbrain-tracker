@@ -75,23 +75,27 @@ export function startActivity(token, activityId) {
   };
 }
 
-export function completeActivity(token, activityId) {
+export function showKnowledge(token, activityId) {
   return {
-    types: ['COMPLETE_ACTIVITY', 'COMPLETE_ACTIVITY_SUCCESS', 'COMPLETE_ACTIVITY_FAIL'],
-    api: fetch(`${API_SERVER}/api/story/${activityId}/complete`, {
+    types: ['SHOW_KNOWLEDGE', 'SHOW_KNOWLEDGE_SUCCESS', 'SHOW_KNOWLEDGE_FAIL'],
+    api: fetch(`${API_SERVER}/api/story/show-knowledge`, {
       method: 'post',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-      }
+      },
+      body: JSON.stringify({
+        activity: activityId,
+      }),
     }),
   };
 }
 
 export function submitAnswer(token, storyId, targetRepo) {
   return dispatch => {
-    fetch(`${API_SERVER}/api/circle/build`, {
+    dispatch({ type: SUBMIT_ANSWER })
+    return fetch(`${API_SERVER}/api/circle/build`, {
       method: 'post',
       headers: {
         'Accept': 'application/json',

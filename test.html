@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>1hasBrain Tracker</title>
+  <link href='https://cdnjs.cloudflare.com/ajax/libs/joyride/2.1.0/joyride.min.css' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <h3 id="yourHeaderID"></h3>
+  <p class="your-paragraph-class"></p>
+  <a id="yourAnchorID" href="#url"></a>
+  <ol id="joyRideTipContent">
+    <li data-id="yourHeaderID" data-text="Next" class="custom">
+      <h2>Stop #1</h2>
+      <p>You can control all the details for you tour stop. Any valid HTML will work inside of Joyride.</p>
+    </li>
+    <li>Tip content...</li>
+    <li data-class="your-paragraph-class" data-options="tipLocation:top;tipAnimation:fade" data-button="Second Button">Content...</li>
+    <li data-id="yourAnchorID" class="custom-class">Content...</li>
+  </ol>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/joyride/2.1.0/jquery.joyride.min.js"></script>
+  <script>
+  $(window).load(function() {
+    $("#joyRideTipContent").joyride({
+      /* Options will go here */
+    });
+  });
+  </script>
+</body>
+</html>

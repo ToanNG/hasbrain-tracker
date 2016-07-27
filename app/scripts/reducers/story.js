@@ -15,6 +15,17 @@ export default function story(state = INITIAL_STATE, action) {
     case 'GET_COMPLETE_STORIES_FAIL':
       return state.set('stories', null);
 
+    case 'COMPLETE_STORY':
+      return state;
+
+    case 'COMPLETE_STORY_SUCCESS':
+      const curStories = state.get('stories');
+      const newStories = curStories.concat([action.result]);
+      return state.set('stories', newStories);
+
+    case 'COMPLETE_STORY_FAIL':
+      return state.set('stories', null);
+
     default:
       return state;
   }

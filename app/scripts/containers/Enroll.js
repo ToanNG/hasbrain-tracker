@@ -2,6 +2,8 @@ import React, { Component, PropTypes } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Map } from 'immutable';
+import Shepherd from 'tether-shepherd';
+ 
 
 import Paper from 'material-ui/lib/paper';
 import List from 'material-ui/lib/lists/list';
@@ -9,94 +11,130 @@ import ListItem from 'material-ui/lib/lists/list-item';
 import Dialog from 'material-ui/lib/dialog';
 import FlatButton from 'material-ui/lib/flat-button';
 import ImageComponent from 'components/Image';
+import D3Tree from 'components/D3Tree';
 import * as EnrollmentActions from 'actions/enrollment';
 import * as LearningPathActions from 'actions/learningPath';
+import * as UserActions from 'actions/user';
 
 @connect(
-  mapStateToProps,
-  mapDispatchToProps
+    mapStateToProps,
+    mapDispatchToProps
 )
 class Enroll extends Component {
-  static propTypes = {
-    auth: PropTypes.object.isRequired,
-    learningPath: PropTypes.object.isRequired,
-    enrollmentActions: PropTypes.object.isRequired,
-    pathActions: PropTypes.object.isRequired,
-  }
+    static propTypes = {
+        auth: PropTypes.object.isRequired,
+        learningPath: PropTypes.object.isRequired,
+        enrollmentActions: PropTypes.object.isRequired,
+        pathActions: PropTypes.object.isRequired,
+        userActions: PropTypes.object.isRequired,
+    }
 
-  state = {
-    openDialog: false,
-    selectedPath: Map()
-  }
+    state = {
+        openDialog: false,
+        selectedPath: Map(),
+        tour: new Shepherd.Tour({
+            defaults: {
+                classes: 'shepherd-theme-arrows',
+                scrollTo: true,
+                showCancelLink: true
+            }
+        })
+    }
 
-  componentDidMount = () => {
-    this._getLearningPaths();
-  }
+    componentDidMount = () => {
+        this._getLearningPaths();
+        const {auth, userActions, user} = this.props;
+        const currentUser = user.get('currentUser');
 
-  _getLearningPaths = () => {
-    const {auth, pathActions} = this.props;
-    const token = auth.get('token');
-    pathActions.getLearningPaths(token);
-  }
+        if(currentUser.levelTips < 1) {
+            const { tour } = this.state;
 
-  _handleTouchTap = (value, e) => {
-    this.setState({
-      openDialog: true,
-      selectedPath: value
-    }, () => {
-        if(value && value.get('nodeTree')){
-            this.drawTree(value);
+            tour.on('complete', function(){
+                tour.getById('learningNodeOverview').destroy();
+                const token = auth.get('token');
+                userActions.updateLevelTips(token, 1);
+            });
+
+            tour.addStep('learningPathOverview', {
+              title: 'Choose your learning path',
+              text: 'What do you want to learn?',
+              attachTo: {element: '.enroll', on: 'left'},
+              buttons: [
+                {
+                  text: 'Next',
+                  action: tour.next,
+                  classes: 'shepherd-button-example-primary'
+                }
+              ]
+            });
+            tour.addStep('learningPathDetail', {
+              title: 'Learning path',
+              text: 'Click on learning path to view what you gonna learn',
+              attachTo: {element: '.enroll_list', on: 'top'},
+              buttons: [
+                {
+                  text: 'OK',
+                  action: tour.hide
+                }
+              ]
+            });
+            tour.addStep('learningNodeOverview', {
+              title: 'Learning node',
+              text: 'This is what you gonna learn',
+              attachTo: {element: '.defaultNode', on: 'left'},
+              buttons: [
+                {
+                  text: 'OK',
+                  action: tour.next
+                }
+              ]
+            });
+
+            tour.start();
         }
-    });
-  }
 
-  _handleSubmit = () => {
-    const {auth, enrollmentActions} = this.props;
-    const token = auth.get('token');
-    enrollmentActions.enroll(token, this.state.selectedPath.get('_id'));
-  }
+    }
 
-  _handleClose = () => {
-    this.setState({
-      openDialog: false
-    });
-  }
+    _getLearningPaths = () => {
+        const {auth, pathActions} = this.props;
+        const token = auth.get('token');
+        pathActions.getLearningPaths(token);
+    }
 
-  drawTree = (value) => {
-    const {auth, enrollmentActions} = this.props;
-    var that = this;
+    getOffset = ( el ) => {
+        var _x = 0;
+        var _y = 0;
+        while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+            _x += el.offsetLeft - el.scrollLeft;
+            _y += el.offsetTop - el.scrollTop;
+            el = el.offsetParent;
+        }
+        return { top: _y, left: _x };
+    }
 
-    var treeData = {
-      "_id" : value.get('_id'),
-      "name":value.get('name'), // root name
-      "nodeType" : "course",
-      "children" : JSON.parse(value.get('nodeTree'))
-    };
-
-    // Calculate total nodes, max label length
-    var totalNodes = 0;
-    var maxLabelLength = 0;
-    // Misc. variables
-    var i = 0;
-    var duration = 750;
-    var root, node;
-
-    // size of the diagram
-    var viewerWidth = 1392;
-    var viewerHeight = 700;
-
-    var tree = d3.layout.tree()
-        .size([viewerHeight, viewerWidth]);
-
-    // define a d3 diagonal projection for use by the node paths later on.
-    var diagonal = d3.svg.diagonal()
-        .projection(function(d) {
-            return [d.y, d.x];
+    _handleTouchTap = (value, e) => {
+        this.setState({
+            openDialog: true,
+            selectedPath: value
+        }, function(){
+            var that = this;
+            setTimeout(function(){
+                that.state.tour.show('learningNodeOverview');
+            }, 1000);
         });
+    }
 
-    // A recursive helper function for performing some setup by walking through all nodes
+    _handleSubmit = () => {
+        const {auth, enrollmentActions} = this.props;
+        const token = auth.get('token');
+        enrollmentActions.enroll(token, this.state.selectedPath.get('_id'));
+    }
 
-    function visit(parent, visitFn, childrenFn) {
+    _handleClose = () => {
+        this.setState({ openDialog: false });
+    }
+
+    _recursive = (parent, visitFn, childrenFn) => {
         if (!parent) return;
 
         visitFn(parent);
@@ -104,360 +142,160 @@ class Enroll extends Component {
         var children = childrenFn(parent);
         if (children) {
             var count = children.length;
-            var numbDependency = 0;
-            var numbNodeHaveDependency = 0;
+            var numbCompleted = 0;
             for (var i = 0; i < count; i++) {
-                visit(children[i], visitFn, childrenFn);
-                if(children[i].isDependency){
-                  numbDependency++;
-                }
-                if(children[i].dependency && children[i].dependency.length > 0){
-                    numbNodeHaveDependency++;
+                this._recursive(children[i], visitFn, childrenFn);
+                if(children[i].isComplete){
+                    numbCompleted++;
                 }
             }
-            if( numbDependency > 0 && parent.nodeType === 'course' ){
-              parent.isDependency = true;
+            if( count === numbCompleted ){
+                parent.isComplete = true;
             } else {
-              parent.isDependency = false;
-            }
-            if(parent.nodeType === "course" && count === numbNodeHaveDependency) {
-                collapse(parent);
+                parent.isComplete = false;
             }
         }
     }
 
-    // Call visit function to establish maxLabelLength
-    visit(treeData, function(d) {
-        totalNodes++;
-        maxLabelLength = Math.max(d.name.length, maxLabelLength);
-        d.dependency = d.dependency;
-        if(!d.dependency || d.dependency && d.dependency.length === 0){
-            d.isDependency = true;
-        } else {
-            d.isDependency = false;
+    _treeData = () => {
+        const selectedPath = this.state.selectedPath;
+        var treeData;
+
+        if(selectedPath.get('_id')) {
+            treeData = {
+                "_id" : this.state.selectedPath.get('_id'),
+                "name": this.state.selectedPath.get('name'),
+                "nodeType" : "course",
+                "isCollapse" : false,
+                "isComplete" : false,
+                "isLocked" : false,
+                "children" : JSON.parse(this.state.selectedPath.get('nodeTree')),
+            };
+
+            // Detect nodes which should collapse
+            this._recursive(treeData, function(d) {
+                var children = d.children;
+                if (children) {
+                    var count = children.length;
+                    var numbNodeHaveDependency = 0;
+                    for (var i = 0; i < count; i++) {
+                        if(children[i].dependency && children[i].dependency.length > 0){
+                          numbNodeHaveDependency++;
+                        }
+                    }
+                    if(d.nodeType === "course" && count === numbNodeHaveDependency) {
+                        d.isCollapse = true;
+                    }
+                }
+                
+                if(d.dependency && d.dependency.length > 0){
+                    d.isLocked = true;
+                } else {
+                    d.isLocked = false;
+                }
+            }, (d) => d.children && d.children.length > 0 ? d.children : null);
+
+            // Detect which nodes is locked
+            this._recursive(treeData, function(d) {
+                var children = d.children;
+                if (children) {
+                    var count = children.length;
+                    var numbLockedNodes = 0;
+                    for (var i = 0; i < count; i++) {
+                        if(children[i].isLocked) {
+                            numbLockedNodes++;
+                        }
+                    }
+                    if(d.nodeType === "course" && count === numbLockedNodes) {
+                        d.isLocked = true;
+                    }
+                }
+            }, (d) => d.children && d.children.length > 0 ? d.children : null);
         }
-    }, function(d) {
-        return d.children && d.children.length > 0 ? d.children : null;
-    });
 
-    // Define the zoom function for the zoomable tree
-
-    function zoom() {
-        svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        return treeData;
     }
 
-
-    // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
-    var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
-
-
-    // define the baseSvg, attaching a class for styling and the zoomListener
-    var baseSvg = d3.select("#learning-tree").append("svg")
-        .attr("width", viewerWidth)
-        .attr("height", viewerHeight)
-        .attr("class", "overlay")
-        .call(zoomListener);
-
-
-    // Helper functions for collapsing and expanding nodes.
-    function collapse(d) {
-        if (d.children) {
-            d._children = d.children;
-            d._children.forEach(collapse);
-            d.children = null;
-        }
-    }
-
-    function expand(d) {
-        if (d._children) {
-            d.children = d._children;
-            d.children.forEach(expand);
-            d._children = null;
-        }
-    }
-
-    // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
-    function centerNode(source) {
-        var scale = zoomListener.scale();
-        var x = -source.y0;
-        var y = -source.x0;
-        x = x * scale + viewerWidth / 2;
-        y = y * scale + viewerHeight / 2;
-        d3.select('g').transition()
-            .duration(duration)
-            .attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
-        zoomListener.scale(scale);
-        zoomListener.translate([x, y]);
-    }
-
-    // Toggle children function
-    function toggleChildren(d) {
-        if (d.children) {
-            d._children = d.children;
-            d.children = null;
-        } else if (d._children) {
-            d.children = d._children;
-            d._children = null;
-        }
-        return d;
-    }
-
-    function click(node) {
-        if (d3.event.defaultPrevented) return;
-        if(node.nodeType === 'course'){
-            node = toggleChildren(node);
-            update(node);
-            centerNode(node);
-        } else {
-            if(!node.isDependency || node.dependency && node.dependency.length > 0){
-                centerNode(node);
-                alert('Does not meet the requirements!');
+    _handleClickOnMap = (d, canClickOnNode) => {
+        if(canClickOnNode) {
+            const { auth, enrollmentActions } = this.props;
+            if(!d.isComplete && d.nodeType === 'activity') {
+                if(d.dependency && d.dependency.length > 0 && d.isLocked){
+                    alert('Does not meet the requirements! You must finish another nodes to active this one!');
+                } else {
+                    const token = auth.get('token');
+                    enrollmentActions.enroll(token, this.state.selectedPath.get('_id'), d._id);
+                }
             } else {
-                const token = auth.get('token');
-                enrollmentActions.enroll(token, that.state.selectedPath.get('_id'), node._id);
+                alert('You have finished this activity!');
             }
+        } else {
+            alert('This map does not allow you to click on node');
         }
     }
 
-    function update(source) {
-        // Compute the new height, function counts total children of root node and sets tree height accordingly.
-        // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
-        // This makes the layout more consistent.
-        var levelWidth = [1];
-        var childCount = function(level, n) {
+    render = () => {
+        const { openDialog, selectedPath } = this.state;
+        const { learningPath } = this.props;
 
-            if (n.children && n.children.length > 0) {
-                if (levelWidth.length <= level + 1) levelWidth.push(0);
-
-                levelWidth[level + 1] += n.children.length;
-                n.children.forEach(function(d) {
-                    childCount(level + 1, d);
-                });
-            }
-        };
-        childCount(0, root);
-        var newHeight = d3.max(levelWidth) * 25; // 25 pixels per line  
-        tree = tree.size([newHeight, viewerWidth]);
-
-        // Compute the new tree layout.
-        var nodes = tree.nodes(root).reverse(),
-            links = tree.links(nodes);
-
-        // Set widths between levels based on maxLabelLength.
-        nodes.forEach(function(d) {
-            d.y = (d.depth * (maxLabelLength * 10)); //maxLabelLength * 10px
-            // alternatively to keep a fixed scale one can set a fixed depth per level
-            // Normalize for fixed-depth by commenting out below line
-            // d.y = (d.depth * 500); //500px per level.
-        });
-
-        // Update the nodes…
-        node = svgGroup.selectAll("g.node")
-            .data(nodes, function(d) {
-                return d.id || (d.id = ++i);
-            });
-
-        // Enter any new nodes at the parent's previous position.
-        var nodeEnter = node.enter().append("g")
-            .attr("class", "node")
-            .attr("transform", function(d) {
-                return "translate(" + source.y0 + "," + source.x0 + ")";
-            })
-            .on('click', click);
-
-        nodeEnter.append("circle")
-            .attr('class', 'nodeCircle')
-            .attr("r", 0)
-            .style("fill", function(d) {
-                return d.children ? "lightsteelblue" : "#fff";
-            });
-
-        nodeEnter.append("text")
-            .attr("x", function(d) {
-                return d.children && d.children.length > 0 ? 10 : 10;
-            })
-            .attr("y", function(d) {
-                return d.children && d.children.length > 0 ? -10 : 0;
-            })
-            .attr("dy", ".35em")
-            .attr('class', 'nodeText')
-            .attr("text-anchor", function(d) {
-                return d.children && d.children.length ? "middle" : "start";
-            })
-            .text(function(d) {
-                return d.name;
-            })
-            .style("fill-opacity", 0);
-
-            // Update the text to reflect whether node has children or not.
-            node.select('text')
-                .attr("x", function(d) {
-                    return d.children && d.children.length > 0 ? -10 : 10;
-                })
-                .attr("y", function(d) {
-                    return d.children && d.children.length > 0 ? -10 : 0;
-                })
-                .attr("text-anchor", function(d) {
-                    return d.children && d.children.length ? "middle" : "start";
-                });
-
-        // Change the circle fill depending on whether it has children and is collapsed
-        node.select("circle.nodeCircle")
-            .attr("r", function(d){
-                return (d.nodeType === "course") ? 3 : 4.5;
-            })
-            .style("fill", function(d) {
-                return (d.nodeType === "course") ? "#ddd" : ((!d.isDependency) ? "#CCC" : "#fff");
-            })
-            .style("stroke", function(d) {
-                return (d.nodeType === "course") ? "none" : "steelblue";
-            });
-
-        // Transition nodes to their new position.
-        var nodeUpdate = node.transition()
-            .duration(duration)
-            .attr("transform", function(d) {
-                return "translate(" + d.y + "," + d.x + ")";
-            });
-
-        // Fade the text in
-        nodeUpdate.select("text")
-            .style("fill-opacity", 1);
-
-        // Transition exiting nodes to the parent's new position.
-        var nodeExit = node.exit().transition()
-            .duration(duration)
-            .attr("transform", function(d) {
-                return "translate(" + source.y + "," + source.x + ")";
-            })
-            .remove();
-
-        nodeExit.select("circle")
-            .attr("r", 0);
-
-        nodeExit.select("text")
-            .style("fill-opacity", 0);
-
-        // Update the links…
-        var link = svgGroup.selectAll("path.link")
-            .data(links, function(d) {
-                return d.target.id;
-            });
-
-        // Enter any new links at the parent's previous position.
-        link.enter().insert("path", "g")
-            .attr("class", "link")
-            .attr("d", function(d) {
-                var o = {
-                    x: source.x0,
-                    y: source.y0
-                };
-                return diagonal({
-                    source: o,
-                    target: o
-                });
-            });
-
-        // Transition links to their new position.
-        link.transition()
-            .duration(duration)
-            .attr("d", diagonal);
-
-        // Transition exiting nodes to the parent's new position.
-        link.exit().transition()
-            .duration(duration)
-            .attr("d", function(d) {
-                var o = {
-                    x: source.x,
-                    y: source.y
-                };
-                return diagonal({
-                    source: o,
-                    target: o
-                });
-            })
-            .remove();
-
-        // Stash the old positions for transition.
-        nodes.forEach(function(d) {
-            d.x0 = d.x;
-            d.y0 = d.y;
-        });
-    }
-
-    // Append a group which holds all nodes and which the zoom Listener can act upon.
-    var svgGroup = baseSvg.append("g");
-
-    // Define the root
-    root = treeData;
-    root.x0 = viewerHeight / 2;
-    root.y0 = 0;
-
-    // Layout the tree initially and center on the root node.
-    update(root);
-    centerNode(root);
-  }
-
-  render = () => {
-    const { openDialog, selectedPath } = this.state;
-    const { learningPath } = this.props;
-
-    if(learningPath.get('paths')) {
+        if(!learningPath.get('paths')) return;
         const actions = [
-          <FlatButton
-            label='Cancel'
-            secondary={true}
-            onTouchTap={this._handleClose}
-          />,
-          <FlatButton
-            label={`Pick ${selectedPath.get('name')}`}
-            primary={true}
-            keyboardFocused={true}
-            onTouchTap={this._handleSubmit}
-          />
+            <FlatButton
+                label='Close'
+                secondary={true}
+                onTouchTap={this._handleClose}
+            />
         ];
         return (
-          <div className='screen'>
-            <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/43762/screenshots/1438974/ng-colab-space_night.gif' />
-            <Paper className='enroll' zDepth={1}>
-              <h2>Pick your path</h2>
-              <List>
-                {learningPath.get('paths').map(path =>
-                  <ListItem
-                    key={path.get('_id')}
-                    primaryText={path.get('name')}
-                    onTouchTap={this._handleTouchTap.bind(null, path)}
-                  />
-                )}
-              </List>
-            </Paper>
+            <div className='screen'>
+                <ImageComponent className='wallpaper' src='https://d13yacurqjgara.cloudfront.net/users/43762/screenshots/1438974/ng-colab-space_night.gif' />
+                <Paper className='enroll' zDepth={1}>
+                    <h2>Pick your path</h2>
+                    <List className='enroll_list'>
+                        {learningPath.get('paths').map(path =>
+                        <ListItem
+                            key={path.get('_id')}
+                            primaryText={path.get('name')}
+                            onTouchTap={this._handleTouchTap.bind(null, path)}
+                        />
+                        )}
+                    </List>
+                </Paper>
 
-            <Dialog
-              actions={actions}
-              modal={false}
-              open={openDialog}
-              onRequestClose={this._handleClose}
-              contentStyle={{width: '100%',maxWidth: 'none'}}
-            >
-              <div id="learning-tree" ref={node => {this.learningTree = node}}></div>
-            </Dialog>
-          </div>
+                 <Dialog
+                    actions={actions}
+                    modal={false}
+                    open={openDialog}
+                    onRequestClose={this._handleClose}
+                    bodyStyle={{padding:0}}
+                    contentStyle={{width: '100%', maxWidth: 'none', height: '100%', maxHeight: 'none', position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)'}}
+                    actionsContainerStyle={{position: 'absolute', bottom: 0, left: 0, backgroundColor: '#fff', marginBottom: 0}}
+                    autoDetectWindowHeight={false}
+                >
+                    <D3Tree
+                        treeData={this._treeData()}
+                        onClick={this._handleClickOnMap}
+                        canClickOnNode={true}
+                     />
+                </Dialog>
+            </div>
         );
     }
-  }
 }
 
 function mapStateToProps(state) {
   return {
     auth: state.auth,
     learningPath: state.learningPath,
+    user: state.user,
   };
 }
 
 function mapDispatchToProps(dispatch) {
   return {
     enrollmentActions: bindActionCreators(EnrollmentActions, dispatch),
-    pathActions: bindActionCreators(LearningPathActions, dispatch)
+    pathActions: bindActionCreators(LearningPathActions, dispatch),
+    userActions: bindActionCreators(UserActions, dispatch)
   };
 }
 
