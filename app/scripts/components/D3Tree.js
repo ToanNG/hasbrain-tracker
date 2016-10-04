@@ -147,7 +147,7 @@ class D3Tree extends Component {
                 links = tree.links(nodes);
 
             nodes.forEach(function(d) {
-                d.y = (d.depth * (maxLabelLength * 10));
+                d.y = (d.depth * 100);
             });
 
             node = svgGroup.selectAll("g.node")
