@@ -9,7 +9,7 @@ export function getCompleteStory(token) {
       method: 'get',
       headers: {
         'Authorization': `Bearer ${token}`,
-      },
+      }
     }),
   };
 }

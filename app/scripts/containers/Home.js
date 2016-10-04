@@ -96,6 +96,18 @@ class Home extends Component {
       });
 
       tempUser = nextUser;
+
+      // Create a userkit profile
+      var oldUser = UserKit.getCurrentProfile();
+      UserKit.createNewProfile(nextUser._id, nextUser, function(){
+        var curUser = UserKit.getCurrentProfile();
+        if(oldUser !== curUser) {
+          UserKit.alias(oldUser, function(){
+            console.log('Created alias successfully!');
+          });
+        }
+        console.log('Profile ID: ', curUser);
+      });
     }
 
     const thisActivity = this.props.activity.get('todayActivity');
@@ -137,7 +149,7 @@ class Home extends Component {
       // tour.start();
     }
 
-    if(nextUser && nextUser.enrollments && nextProps.story.get('stories')){
+    if(nextUser != null && nextUser.enrollments && nextProps.story.get('stories') && this.state.showLearningTree ){
       this.setState({showLearningTree: true});
     }
   }

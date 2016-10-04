@@ -41,6 +41,24 @@ class Enroll extends Component {
         })
     }
 
+    componentWillReceiveProps = (nextProps) => {
+        const thisUser = this.props.user.get('currentUser');
+        const nextUser = nextProps.user.get('currentUser');
+        if (nextUser !== thisUser && nextUser) {
+          // Create a userkit profile
+          var oldUser = UserKit.getCurrentProfile();
+          UserKit.createNewProfile(nextUser._id, nextUser, function(){
+            var curUser = UserKit.getCurrentProfile();
+            if(oldUser !== curUser) {
+              UserKit.alias(oldUser, function(){
+                console.log('Created alias successfully!');
+              });
+            }
+            console.log('Profile ID: ', curUser);
+          });
+        }
+    }
+
     componentDidMount = () => {
         this._getLearningPaths();
         const {auth, userActions, user} = this.props;
