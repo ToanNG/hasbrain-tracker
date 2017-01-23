@@ -45,17 +45,20 @@ class Enroll extends Component {
         const thisUser = this.props.user.get('currentUser');
         const nextUser = nextProps.user.get('currentUser');
         if (nextUser !== thisUser && nextUser) {
-          // Create a userkit profile
-          var oldUser = UserKit.getCurrentProfile();
-          UserKit.createNewProfile(nextUser._id, nextUser, function(){
-            var curUser = UserKit.getCurrentProfile();
-            if(oldUser !== curUser) {
-              UserKit.alias(oldUser, function(){
-                console.log('Created alias successfully!');
-              });
+            var oldUser = UserKit.getCurrentProfile();
+            var name = '';
+            if(nextUser.name && nextUser.name.first && nextUser.name.last) {
+                name = nextUser.name.first + ' ' + nextUser.name.last;
             }
-            console.log('Profile ID: ', curUser);
-          });
+            UserKit.createNewProfile(nextUser._id, { email: nextUser.email, name: name }, function(){
+                var curUser = UserKit.getCurrentProfile();
+                if(oldUser !== curUser) {
+                    UserKit.alias(oldUser, function(){
+                        console.log('Created alias successfully!');
+                    });
+                }
+                console.log('Profile ID: ', curUser);
+            });
         }
     }
 
@@ -110,7 +113,6 @@ class Enroll extends Component {
 
             tour.start();
         }
-
     }
 
     _getLearningPaths = () => {
@@ -241,6 +243,8 @@ class Enroll extends Component {
                 if(d.dependency && d.dependency.length > 0 && d.isLocked){
                     alert('Does not meet the requirements! You must finish another nodes to active this one!');
                 } else {
+                    UserKit.track('start_knowledge', {timestamp: new Date().getTime(), learning_path: this.state.selectedPath.get('_id')});
+                    UserKit.track('start_excercise', {timestamp: new Date().getTime(), activity_id: d._id});
                     const token = auth.get('token');
                     enrollmentActions.enroll(token, this.state.selectedPath.get('_id'), d._id);
                 }

@@ -7,12 +7,20 @@ import ReactDOM from 'react-dom';
 class D3Tree extends Component {
 
     componentDidMount = () => {
-        this._showMap()
+        const { treeData } = this.props;
+        this._showMap(treeData);
     }
 
-    _showMap = () => {
+    componentWillReceiveProps = (nextProps) => {
+        const thisTreeData = this.props.treeData;
+        const nextTreeData = nextProps.treeData;
+        if (nextTreeData !== thisTreeData && nextTreeData) {
+            this._showMap(nextTreeData);
+        }
+    }
+
+    _showMap = (treeData) => {
         const {
-            treeData,
             onClick,
             canClickOnNode
         } = this.props;

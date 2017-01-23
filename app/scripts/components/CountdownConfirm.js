@@ -64,7 +64,7 @@ class CountdownConfirm extends Component {
         autoHideDuration={0}
         onActionTouchTap={this.handleActionTouchTap}
         onRequestClose={this.handleRequestClose}
-        style={{zIndex: 1000}} />
+        style={{zIndex: 998}} />
     );
   }
 }

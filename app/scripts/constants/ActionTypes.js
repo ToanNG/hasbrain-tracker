@@ -1,5 +1,6 @@
-export const API_SERVER = 'http://localhost:3000';
-// export const API_SERVER = 'http://52.74.99.100';
+// export const API_SERVER = 'http://localhost:3000';
+export const API_SERVER = 'http://52.74.99.100';
+export const RUNNING_TEST_SERVER = 'http://54.179.160.234';
 
 export const LOGIN = 'LOGIN';
 export const LOGIN_SUCCESS = 'LOGIN_SUCCESS';

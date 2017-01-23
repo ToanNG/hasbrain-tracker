@@ -9,100 +9,15 @@
   <script type="text/javascript" src="https://userkit-web-sdk.surge.sh/sdk.js"></script>
   <script>
     UserKit.init({
-      API_KEY: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwcm9qZWN0X2lkIjoiNTA3ZjFmNzdiY2Y4NmNkNzk5NDM5MDExIiwiaWF0IjoxNDY5NzkxMDc4fQ.c4W2dWoUKPyDP2QCzTjmkrGow8J-tNQaA1g2A8BLr-U'
-    })
-    var profile_id = UserKit.getCurrentProfile();
-    console.log('profile_id:');
-    console.log(profile_id);
-
-    //UserKit.profile.set(profile_id, { test: 'test', id: 1, obj: { a: 'a'}, arr: [1,2,3] });
-
-    //UserKit.set({name: 'Nguyễn Quang Thức'});
-
-    //UserKit.profile.set_once({set_once: 1}); //just allow update once
-    
-    //UserKit.profile.increment('numb', 1);
-    // UserKit.profile.increment({
-    //   numb : 2
-    // });
-
-    //UserKit.profile.append('arr', 4);
-    //UserKit.profile.append({'arr': 5});
-
-    // UserKit.profile.union('arr', 6, function(data){
-    //   console.log(data);
-    // });
-    //UserKit.profile.union({'union': 4});
-
-    //UserKit.track('event', {'test': 1});
-
-    // UserKit.bulk_track(
-    //   [
-    //     {
-    //       name: 'bulk_track',
-    //       properties: { 'A': 1}
-    //     },
-    //     { name: 'bulk_track',
-    //     properties: { 'A': 2}
-    //     }
-    //   ]
-    // );
-
-    UserKit.chat();
-
-    // UserKit.profile.get_property('arr', function(data){
-    //   console.log(data);
-    // });
-
-    // UserKit.get_properties('name, test', function(data){
-    //   console.log(data);
-    // });
-
-    // UserKit.array_search('name', 'Nguyễn Quang Thức', function(data){
-    //   console.log(data);
-    // });
-    
-    // UserKit.array_remove('name', 'Nguyễn Quang Thức', function(data){
-    //   console.log(data);
-    // });
-
-    // UserKit.signup('thucnq1994_3@gmail.com', '123456', [{'name': 'Nguyễn Quang Thức'}], function(data){
-    //   console.log(data);
-    // });
-    // UserKit.test();
-
-    // UserKit.signin('thucnq1994@gmail.com', '123456', function(data){
-    //   UserKit.get_profiles(function(profile){
-    //     console.log(profile);
-    //   });
-
-    //   UserKit.create_profile([
-    //     {
-    //       "name": "Testing profile",
-    //       "more": "more"
-    //     }
-    //   ], function(data){
-    //     console.log(data);
-    //   })
-    // });
-
-    // UserKit.signin('thucnq1994@gmail.com', '123456', function(data){
-    //     UserKit.update_profile('57c79bed8367bf7545f5f306', {name: "ABC"}, function(data){
-    //         console.log(data);
-    //     });
-    // });
-
-    // UserKit.signin('thucnq1994@gmail.com', '123456', function(data){
-    //     UserKit.delete_profile('57edd8c18965484fa918c273', function(data){
-    //         console.log(data);
-    //     });
-    // });
-
-    // UserKit.signin('thucnq1994@gmail.com', '123456', function(data){
-        // UserKit.get_messages(10, 0, function(data){
-        //     console.log(data);
-        // });
-    // });
+      API_KEY: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwcm9qZWN0X2lkIjoiNTdjZjhmMzk4ZWQ4YjBlYTY4OWJhMGRhIiwiaWF0IjoxNDczMjIwNDU5fQ.zJXAshaN8ijjfg_B7GsDw_6WCJrWzb4-1eCXbSQ9Pxo',
+      SERVER_URL: 'http://userkit-hb-staging.ap-southeast-1.elasticbeanstalk.com/'
+    });
+    UserKit.chat({
+      apiKey: 'AIzaSyDl-sRbDmhA7seCzCMAn7A5hLgE8nzhFvo',
+      authDomain: 'hasbrain-7e6da.firebaseapp.com',
+      databaseURL: 'https://hasbrain-7e6da.firebaseio.com',
+      storageBucket: 'hasbrain-7e6da.appspot.com'
+    });
   </script>
 </head>
 <body>

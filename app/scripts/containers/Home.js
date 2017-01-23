@@ -5,6 +5,8 @@ import { connect } from 'react-redux';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-okaidia.css';
 import Shepherd from 'tether-shepherd';
+import ReactDisqusThread from 'react-disqus-thread';
+import { parseString } from 'xml2js';
 
 import Card from 'material-ui/lib/card/card';
 import CardMedia from 'material-ui/lib/card/card-media';
@@ -29,16 +31,14 @@ import AnswerForm from 'components/AnswerForm';
 import CountdownConfirm from 'components/CountdownConfirm';
 import Pomodoro from 'components/Pomodoro';
 import D3Tree from 'components/D3Tree';
+import Quiz from 'components/Quiz';
 import * as ActivityActions from 'actions/activity';
 import * as UserActions from 'actions/user';
 import * as StoryActions from 'actions/story';
 import * as PathActions from 'actions/learningPath';
 import * as PairingActions from 'actions/pairing';
-
-let pubnub = PUBNUB({
-  publish_key: 'pub-c-8807fd6d-6f87-486f-9fd6-5869bc37e93a',
-  subscribe_key: 'sub-c-861f96a2-3c20-11e6-9236-02ee2ddab7fe',
-});
+import * as QuizActions from 'actions/quiz';
+import * as SettingsActions from 'actions/settings';
 
 @connect(
   mapStateToProps,
@@ -61,15 +61,41 @@ class Home extends Component {
             scrollTo: true,
             showCancelLink: true
         }
-    })
+    }),
+    isSubmitting: false,
+    startWorkingTime: 0
   }
 
   componentDidMount = () => {
+    this.setState({startWorkingTime: new Date().getTime()});
     this._getUser();
     this._getTodayActivity();
     this._getStory();
     this._getPath();
     this._getPartner();
+    window.addEventListener('message', this._handleReceiveMessage);
+    window.addEventListener('beforeunload', this._handleSetWorkingTimeBeforeLeaving);
+  }
+
+  _handleReceiveMessage = (event) => {
+    if (event.origin === 'http://hasbrain.com') {
+      UserKit.track('comment', {timestamp: new Date().getTime(), disqusCommentId: event.data.id, text: event.data.text});
+    }
+  }
+
+  _handleSetWorkingTimeBeforeLeaving = () => {
+    const {auth, storyActions, activity} = this.props;
+    const { startWorkingTime } = this.state;
+    const todayActivity = activity.get('todayActivity');
+    const token = auth.get('token');
+    let currentTime = new Date().getTime();
+    let workingTime = (currentTime - startWorkingTime)/1000;
+    storyActions.addWorkingTime(token, todayActivity.storyId, workingTime);
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener('message', this._handleReceiveMessage);
+    window.removeEventListener('beforeunload', this._handleSetWorkingTimeBeforeLeaving);
   }
 
   componentDidUpdate = () => {
@@ -77,30 +103,20 @@ class Home extends Component {
   }
 
   componentWillReceiveProps = (nextProps) => {
-    var tempActivity = null, tempUser = null;
+    let tempActivity = null, tempUser = null;
 
     const thisUser = this.props.user.get('currentUser');
     const nextUser = nextProps.user.get('currentUser');
     if (nextUser !== thisUser && nextUser) {
-      console.log(`Subscribing to channel hasbrain_test_${nextUser._id} ...`);
-      pubnub.subscribe({
-        channel: `hasbrain_test_${nextUser._id}`,
-        message: (message, env, ch, timer, magic_ch) => {
-          if(message.type && message.status && message.type === 'test_result' && message.status === 1){
-            this.setState({openMoveToKnowledgeDialog : true});
-            this.confirm.dismiss();
-          } else {
-            this._handleOpenDialog(message.text);
-          }
-        },
-      });
-
       tempUser = nextUser;
 
-      // Create a userkit profile
-      var oldUser = UserKit.getCurrentProfile();
-      UserKit.createNewProfile(nextUser._id, nextUser, function(){
-        var curUser = UserKit.getCurrentProfile();
+      let oldUser = UserKit.getCurrentProfile();
+      let name = '';
+      if(nextUser.name && nextUser.name.first && nextUser.name.last) {
+          name = nextUser.name.first + ' ' + nextUser.name.last;
+      }
+      UserKit.createNewProfile(nextUser._id, { email: nextUser.email, name: name }, function(){
+        let curUser = UserKit.getCurrentProfile();
         if(oldUser !== curUser) {
           UserKit.alias(oldUser, function(){
             console.log('Created alias successfully!');
@@ -114,13 +130,17 @@ class Home extends Component {
     const nextActivity = nextProps.activity.get('todayActivity');
     if(thisActivity !== nextActivity && nextActivity){
       tempActivity = nextActivity;
+
+      // const { auth, quizActions } = this.props;
+      // const token = auth.get('token');
+      // quizActions.get(token, tempActivity._id); // Get quiz list by activity id
     }
 
     if(!tempUser) { tempUser = thisUser; }
     if(!tempActivity){ tempActivity = thisActivity; }
     if(tempUser && tempActivity) {
       if(tempActivity.tester && !tempActivity.showKnowledge && !this.state.displayMoveToKnowledgeButton){
-        this._countDown();
+        // this._countDown();
       }
     }
 
@@ -149,8 +169,14 @@ class Home extends Component {
       // tour.start();
     }
 
-    if(nextUser != null && nextUser.enrollments && nextProps.story.get('stories') && this.state.showLearningTree ){
-      this.setState({showLearningTree: true});
+    const thisCheck = this.props.activity.get('finishGettingTodayActivity');
+    const nextCheck = nextProps.activity.get('finishGettingTodayActivity');
+    if(thisCheck !== nextCheck && nextCheck){
+      if(!nextActivity || !thisActivity){
+        if(typeof this.state.showLearningTree !== undefined ) {
+          this.setState({ showLearningTree: true }); // Display learning tree if don't have current node
+        }
+      }
     }
   }
 
@@ -161,9 +187,10 @@ class Home extends Component {
   }
 
   _getUser = () => {
-    const {auth, userActions} = this.props;
+    const {auth, userActions, settingsActions} = this.props;
     const token = auth.get('token');
-    userActions.getUser(token); 
+    userActions.getUser(token);
+    settingsActions.get(token);
   }
 
   _getStory = () => {
@@ -210,9 +237,9 @@ class Home extends Component {
 
   _secondsToHms = (d) => {
     d = Number(d);
-    var h = Math.floor(d / 3600);
-    var m = Math.floor(d % 3600 / 60);
-    var s = Math.floor(d % 3600 % 60);
+    let h = Math.floor(d / 3600);
+    let m = Math.floor(d % 3600 / 60);
+    let s = Math.floor(d % 3600 % 60);
     return ((h > 0 ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (s < 10 ? "0" : "") + s);
   }
 
@@ -221,13 +248,6 @@ class Home extends Component {
     const token = auth.get('token');
     const todayActivity = activity.get('todayActivity');
     actions.showKnowledge(token, todayActivity._id);
-  }
-
-  _handleClickSkip = () => {
-    const {auth, activity, storyActions} = this.props;
-    const token = auth.get('token');
-    const todayActivity = activity.get('todayActivity');
-    storyActions.completeStory(token, todayActivity._id);
   }
 
   _handleCountdownEnd = () => {
@@ -246,10 +266,105 @@ class Home extends Component {
   }
 
   _handleSubmit = (repoUrl) => {
-    const {auth, activity, actions} = this.props;
+    const {auth, activity, user, actions, storyActions, userActions} = this.props;
     const token = auth.get('token');
+    let self = this;
     const todayActivity = activity.get('todayActivity');
-    actions.submitAnswer(token, todayActivity.storyId, repoUrl);
+    const currentUser = user.get('currentUser');
+    self.setState({isSubmitting: true});
+
+    // Determine that which learning path are learning for choosing the right test server
+    if(todayActivity.learningPath._id == '58130aa6c0c71fa70567ec09') { // C++
+      actions.submitAnswerCpp(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
+        parseString(res, function (err, result) {
+          if(result.Catch.OverallResults[0].$.successes == 0 && result.Catch.OverallResults[0].$.failures == 1){
+            throw new Error('Test fail');
+          } else if(result.Catch.OverallResults[0].$.successes == 5 && result.Catch.OverallResults[0].$.failures == 0){
+            storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
+              if(status === 200){
+                self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
+                  UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                  self.confirm.dismiss();
+                });
+              } else {
+                self.setState({isSubmitting: false}, () => {
+                  UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                  self._handleOpenDialog('Test fails! Please try again.');
+                  userActions.updateChaining(token, 'reset');
+                });
+              }
+            });
+          } else {
+            throw new Error('Unexpected Error!');
+          }
+        });
+      }).catch((err)=>{
+        this.setState({isSubmitting: false}, ()=>{
+          UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+          this._handleOpenDialog(err.message);
+          userActions.updateChaining(token, 'reset');
+        });
+      });
+    } else if(todayActivity.learningPath._id == '5815923cc0c71fa70567ec1a') { // java
+      actions.submitAnswerJava(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
+        let lines = res.split('\n');
+        if ( lines[4].indexOf( 'OK' ) > -1 ) {
+          storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
+            if(status === 200){
+              self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
+                UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                self.confirm.dismiss();
+              });
+            } else {
+              self.setState({isSubmitting: false}, () => {
+                UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                self._handleOpenDialog('Test fails! Please try again.');
+                userActions.updateChaining(token, 'reset');
+              });
+            }
+          });
+        } else {
+          let ret = '';
+          for(let i = 3; i < (lines.length - 5); i++){
+            ret += '\n' + lines[i];
+          }
+          throw new Error(ret);
+        }
+      }).catch((err)=>{
+        this.setState({isSubmitting: false}, ()=>{
+          UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+          this._handleOpenDialog(err.message);
+          userActions.updateChaining(token, 'reset');
+        });
+      });
+    } else {
+      actions.submitAnswer(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
+        if(res.failures.length > 0){
+          throw new Error('Test fail');
+        } else {
+          storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
+            if(status === 200){
+              self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
+                UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                self.confirm.dismiss();
+              });
+            } else {
+              self.setState({isSubmitting: false}, () => {
+                UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                self._handleOpenDialog('Test fails! Please try again.');
+                userActions.updateChaining(token, 'reset');
+              });
+            }
+          });
+        }
+      }).catch((err)=>{
+        this.setState({isSubmitting: false}, ()=>{
+          UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+          this._handleOpenDialog(err.message);
+          userActions.updateChaining(token, 'reset');
+        });
+      });
+    }
   }
 
   _handleOpenDialog = (message) => {
@@ -267,11 +382,11 @@ class Home extends Component {
 
     visitFn(parent);
 
-    var children = childrenFn(parent);
+    let children = childrenFn(parent);
     if (children) {
-      var count = children.length;
-      var numbCompleted = 0;
-      for (var i = 0; i < count; i++) {
+      let count = children.length;
+      let numbCompleted = 0;
+      for (let i = 0; i < count; i++) {
           this._recursive(children[i], visitFn, childrenFn);
           if(children[i].isComplete){
             numbCompleted++;
@@ -287,7 +402,6 @@ class Home extends Component {
 
   _treeData = () => {
     const { activity, story, user } = this.props;
-    let completedNodes = [];
     const currentUser = user.get('currentUser');
      if(currentUser && currentUser.enrollments && currentUser.enrollments.length > 0) {
       const completedActivityArr = story.get('stories') ? story.get('stories').map(function(story){
@@ -297,7 +411,7 @@ class Home extends Component {
       const todayActivity = activity.get('todayActivity');
       const userData = currentUser.enrollments[0] ? currentUser.enrollments[0] : { _id : 0, name : '', nodeType : 'course', isCollapse : false, isComplete : false, isLocked : false, children : null};
 
-      var treeData = {
+      let treeData = {
         "_id" : userData.learningPath._id,
         "name": userData.learningPath.name,
         "nodeType" : "course",
@@ -308,57 +422,36 @@ class Home extends Component {
         "children" : JSON.parse(userData.learningPath.nodeTree),
       };
 
-      // Detect nodes which is completed
       this._recursive(treeData, function(d) {
         d.isComplete = (completedActivityArr.indexOf(d._id) > -1) ? true : false;
         if(todayActivity && d._id === todayActivity._id) {
           d.isCurrentNode = true;
         }
-      }, (d) => d.children && d.children.length > 0 ? d.children : null);
-
-      // Detect nodes which should collapse
-      this._recursive(treeData, function(d) {
-
-        if(d.isComplete && completedNodes.indexOf(d._id) === -1){ completedNodes.push(d._id); }
-
-        var children = d.children;
-        if (children) {
-            var count = children.length;
-            var numbNodeHaveDependency = 0;
-            for (var i = 0; i < count; i++) {
-                if(children[i].dependency && children[i].dependency.length > 0 && completedNodes.filter(function (elem) { return children[i].dependency.indexOf(elem) > -1; }).length != children[i].dependency.length){
-                  numbNodeHaveDependency++;
-                }
-            }
-            if(d.nodeType === "course" && count === numbNodeHaveDependency) {
-              d.isCollapse = true;
-            }
+        if(d.dependency && d.dependency.length > 0
+          && completedActivityArr.filter(function (elem) { return d.dependency.indexOf(elem) > -1; }).length != d.dependency.length){
+          d.isLocked = true;
         }
-        
-        if(d.dependency && d.dependency.length > 0){
-          if(completedNodes.filter(function (elem) { return d.dependency.indexOf(elem) > -1; }).length === d.dependency.length){
-            d.isLocked = false;
-          } else {
-            d.isLocked = true;
-          }
-        } else {
-          d.isLocked = false;
-        }
-      }, (d) => d.children && d.children.length > 0 ? d.children : null);
 
-      // Detect which nodes is locked
-      this._recursive(treeData, function(d) {
-        var children = d.children;
-        if (children) {
-            var count = children.length;
-            var numbLockedNodes = 0;
-            for (var i = 0; i < count; i++) {
+        // Detect which nodes is locked
+        let children = d.children;
+        if (children && d.nodeType === "course") {
+            let count = children.length;
+            let numbLockedNodes = 0;
+            let numbNodeHaveDependency = 0;
+            for (let i = 0; i < count; i++) {
                 if(children[i].isLocked) {
                   numbLockedNodes++;
                 }
+                if(children[i].dependency && children[i].dependency.length > 0
+                  && completedActivityArr.filter(function (elem) { return children[i].dependency.indexOf(elem) > -1; }).length != children[i].dependency.length){
+                  numbNodeHaveDependency++;
+                }
             }
-            if(d.nodeType === "course" && count === numbLockedNodes) {
+            if(count === numbLockedNodes) {
               d.isLocked = true;
+            }
+            if(count === numbNodeHaveDependency) {
+              d.isCollapse = true;
             }
         }
       }, (d) => d.children && d.children.length > 0 ? d.children : null);
@@ -369,7 +462,7 @@ class Home extends Component {
 
   _handleClickOnMap = (d, canClickOnNode) => {
     if(canClickOnNode) {
-      var flag = true;
+      let flag = true;
       const { auth, actions, activity } = this.props;
       // const todayActivity = activity.get('todayActivity');
       // if(todayActivity) {
@@ -388,6 +481,7 @@ class Home extends Component {
         }
 
         if(flag){
+          UserKit.track('start_excercise', {timestamp: new Date().getTime(), activity_id: d._id});
           const token = auth.get('token');
           actions.createActivity(token, d._id);
           this.setState({ openShowMapDialog: false, openSelectAnotherNode : false });
@@ -421,7 +515,7 @@ class Home extends Component {
   _handleFireGiveUpDialog = () => {
     this.confirm.dismiss();
     this.setState({
-      openGiveUpDialog: false,  
+      openGiveUpDialog: false,
       openSelectAnotherNode: true,
       countdown: 1500
     }, function(){
@@ -438,27 +532,72 @@ class Home extends Component {
     const todayActivity = activity.get('todayActivity');
     actions.showKnowledge(token, todayActivity._id);
     this.setState({openMoveToKnowledgeDialog: false});
-
   }
 
   _handleSkipAndFinish = () => {
-    const {auth, activity, storyActions} = this.props;
+    this._handleSetWorkingTimeBeforeLeaving();
+    const {auth, activity, storyActions, actions, user, userActions, settings} = this.props;
     const token = auth.get('token');
     const todayActivity = activity.get('todayActivity');
-    storyActions.completeStory(token, todayActivity._id);
-    this.setState({openMoveToKnowledgeDialog: false});
+    const currentUser = user.get('currentUser');
+    storyActions.completeStory(token, todayActivity._id).then(()=>{
+      const sett = settings.get('settings');
+      let chainingLevel = (currentUser.chaining + 1);
+      chainingLevel = (chainingLevel > sett.maxChainingLevel) ? sett.maxChainingLevel : chainingLevel;
+      let points = sett.chainingPoints * chainingLevel;
+      this.setState({openMoveToKnowledgeDialog: false, startWorkingTime: 0}, () => {
+        let period = 0;
+        if(todayActivity.workingTime) {
+          period = todayActivity.workingTime;
+        }
+        UserKit.track('learning_time', {activity_id: todayActivity._id, activity_name: todayActivity.name, student_id: currentUser._id, student_name: currentUser.name,timestamp: new Date().getTime(), period: period});
+        actions.deleteTodayActivity();
+        userActions.addPoints(token, points).then(()=>{
+          userActions.updateChaining(token, 'increase');
+        });
+      });
+    });
+  }
+
+  _handleClickSkip = () => {
+    this._handleSetWorkingTimeBeforeLeaving();
+    const {auth, activity, storyActions, actions, user, settings, userActions} = this.props;
+    const token = auth.get('token');
+    const todayActivity = activity.get('todayActivity');
+    const currentUser = user.get('currentUser');
+    storyActions.completeStory(token, todayActivity._id).then(()=>{
+      const sett = settings.get('settings');
+      let chainingLevel = (currentUser.chaining + 1);
+      chainingLevel = (chainingLevel > sett.maxChainingLevel) ? sett.maxChainingLevel : chainingLevel;
+      let points = sett.chainingPoints * chainingLevel;
+      this.setState({startWorkingTime: 0}, () => {
+        let period = 0;
+        if(todayActivity.workingTime) {
+          period = todayActivity.workingTime;
+        }
+        UserKit.track('learning_time', {activity_id: todayActivity._id, activity_name: todayActivity.name, student_id: currentUser._id, student_name: currentUser.name, timestamp: new Date().getTime(), period: period});
+        actions.deleteTodayActivity();
+        userActions.addPoints(token, points).then(()=>{
+          userActions.updateChaining(token, 'increase');
+        });
+      });
+    });
+  }
+
+  _handleNewComment = (comment) => {
+    console.log(comment.text);
   }
 
   render = () => {
-    const {activity, user, pairing } = this.props;
+    const {activity, user, pairing, quiz } = this.props;
+    const { isSubmitting } = this.state;
     const todayActivity = activity.get('todayActivity');
-    const isSubmitting = activity.get('isSubmitting');
     const currentUser = user.get('currentUser');
     const partner = pairing.get('pairing');
     let buddy, company, course, name, description, problem, knowledge, isStarted, isCompleted, tester, showKnowledge, solvedProblem;
 
     if (!currentUser) return null;
-    
+
     if(todayActivity) {
       company = todayActivity.company;
       course = todayActivity.parent;
@@ -526,7 +665,7 @@ class Home extends Component {
                           } />
                         <CardText>
                           <div dangerouslySetInnerHTML={{__html: problem}} />
-                          { 
+                          {
                             (todayActivity.buddyCompleted === false && partner) ?
                             <div>
                               <Divider /><br/><i>You're finished it and you need to help your buddy overcome this challenge to continue!</i>
@@ -568,7 +707,7 @@ class Home extends Component {
                       (
                         (tester) ?
                         (
-                          (this.state.displayMoveToKnowledgeButton) ? 
+                          (this.state.displayMoveToKnowledgeButton) ?
                           <div>
                             <CardText dangerouslySetInnerHTML={{__html: problem}} />
                             <Divider />
@@ -598,6 +737,7 @@ class Home extends Component {
                         </div>
                       )
                     }
+                    <iframe src={"http://hasbrain.com/forum/"+todayActivity._id} width="100%" height="800" style={{border:'none'}}></iframe>
                   </div>
                 }
               </Card>
@@ -613,7 +753,7 @@ class Home extends Component {
                         <div dangerouslySetInnerHTML={{__html: company.description}} />
                         <br/>
                         <Divider />
-                        <br/>               
+                        <br/>
                         {company ? 'Contact: ' + company.contact : ''}
                       </CardText>
                     </Card> }
@@ -688,7 +828,7 @@ class Home extends Component {
               titleStyle={{textAlign:'center'}}
               bodyStyle={{padding: 0}}
               contentStyle={{width: '100%', maxWidth: 'none', height: '100%', position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)'}}
-              actionsContainerStyle={{position: 'absolute', bottom: 0, left: 0, backgroundColor: '#fff', marginBottom: 0}}
+              actionsContainerStyle={{position: 'absolute', bottom: 0, left: 0, backgroundColor: '#fff', marginBottom: 0, zIndex: 99999}}
               autoDetectWindowHeight={false}
             >
               <D3Tree
@@ -756,6 +896,8 @@ function mapStateToProps(state) {
     story: state.story,
     learningPath : state.learningPath,
     pairing : state.pairing,
+    quiz: state.quiz,
+    settings: state.settings,
   };
 }
 
@@ -766,6 +908,8 @@ function mapDispatchToProps(dispatch) {
     storyActions: bindActionCreators(StoryActions, dispatch),
     pathActions: bindActionCreators(PathActions, dispatch),
     pairingActions: bindActionCreators(PairingActions, dispatch),
+    quizActions: bindActionCreators(QuizActions, dispatch),
+    settingsActions: bindActionCreators(SettingsActions, dispatch)
   };
 }
 

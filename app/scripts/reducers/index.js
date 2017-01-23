@@ -6,6 +6,8 @@ import user from 'reducers/user';
 import learningPath from 'reducers/learningPath';
 import story from 'reducers/story';
 import pairing from 'reducers/pairing';
+import quiz from 'reducers/quiz';
+import settings from 'reducers/settings';
 
 const rootReducer = combineReducers({
   router: routerReducer,
@@ -15,6 +17,8 @@ const rootReducer = combineReducers({
   learningPath,
   story,
   pairing,
+  quiz,
+  settings,
 });
 
 export default rootReducer;

@@ -20,6 +20,16 @@ export default function user(state = INITIAL_STATE, action) {
     case GET_USER_FAIL:
       return state.set('currentUser', null);
 
+    case 'UPDATE_CHAINING_SUCCESS':
+      const curUser = state.get('currentUser');
+      curUser.chaining = action.result.chaining;
+      return state.set('currentUser', curUser);
+
+    case 'ADD_POINTS_SUCCESS':
+      const currentUser = state.get('currentUser');
+      currentUser.points = action.result.points;
+      return state.set('currentUser', currentUser);
+
     default:
       return state;
   }

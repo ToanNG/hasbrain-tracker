@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "hasBrain Tracker",
-  "version": "1.0",
+  "version": "1.6",
 
   "description": "",
   "icons": { "128": "icon128.png" },
@@ -14,5 +14,5 @@
     "storage",
     "http://*/*"
   ],
-  "content_security_policy": "script-src 'self' 'sha256-mGgTY+akk35r2BozcBybZjupRzok6UgdDEniB+igsgc=' https://code.jquery.com/jquery-1.10.2.min.js https://cdn.pubnub.com/pubnub-3.7.18.min.js https://d3js.org/d3.v3.min.js https://cdnjs.cloudflare.com/ajax/libs/joyride/2.1.0/jquery.joyride.min.js https://userkit-web-sdk.surge.sh/sdk.js https://www.gstatic.com/firebasejs/3.3.0/firebase.js https://*.firebaseio.com; object-src 'self'"
+  "content_security_policy": "script-src 'self' 'sha256-M4SafQhkCPB/ROWLzkAYfa1C/KgO0IWFhpP2hgCDANw=' https://code.jquery.com/jquery-1.10.2.min.js https://cdn.pubnub.com/pubnub-3.7.18.min.js https://d3js.org/d3.v3.min.js https://cdnjs.cloudflare.com/ajax/libs/joyride/2.1.0/jquery.joyride.min.js https://userkit-web-sdk.surge.sh/sdk.js https://www.gstatic.com/firebasejs/3.3.0/firebase.js https://*.firebaseio.com https://*.googleapis.com; object-src 'self'"
 }

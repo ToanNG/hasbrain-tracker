@@ -16,7 +16,7 @@ class AnswerForm extends Component {
   status = {
     idle: {
       disabled: false,
-      buttonText: 'Submit',
+      buttonText: 'Next',
       buttonWidth: 112,
     },
     pending: {

@@ -5,6 +5,7 @@ import RouteCSSTransitionGroup from 'containers/RouteCSSTransitionGroup';
 import { switchTo } from 'containers/Router';
 import ImageComponent from 'components/Image';
 import * as AuthActions from 'actions/auth';
+import * as UserActions from 'actions/user';
 import FontIcon from 'material-ui/lib/font-icon';
 import Dialog from 'material-ui/lib/dialog';
 import FlatButton from 'material-ui/lib/flat-button';
@@ -31,7 +32,9 @@ class App extends Component {
     if (thisAuth.get('isLoggedIn') !== nextAuth.get('isLoggedIn')) {
       if (nextAuth.get('isLoggedIn')) {
         actions.setToken(nextAuth.get('token'));
-        switchTo('home');
+        const {userActions} = this.props;
+        const token = nextAuth.get('token');
+        userActions.getUser(token);
       } else {
         switchTo('login');
       }
@@ -40,6 +43,8 @@ class App extends Component {
     if (thisUser.get('currentUser') !== nextUser.get('currentUser') && nextUser.get('currentUser')) {
       if (!nextUser.get('currentUser').enrollments) {
         switchTo('enroll');
+      } else {
+        switchTo('home');
       }
     }
   }
@@ -70,6 +75,7 @@ function mapDispatchToProps(dispatch) {
   return {
     switchTo: bindActionCreators(switchTo, dispatch),
     actions: bindActionCreators(AuthActions, dispatch),
+    userActions: bindActionCreators(UserActions, dispatch),
   };
 }
 

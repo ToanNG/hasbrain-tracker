@@ -27,7 +27,7 @@ class Login extends Component {
     const code = generateCode(10);
     const redirectUri = `${API_SERVER}/github/callback?c=${code}`;
     const win = window.open(
-      `https://github.com/login/oauth/authorize?scope=user:email&client_id=472d3f7775e7e51c6660&redirect_uri=${encodeURIComponent(redirectUri)}`,
+      `https://github.com/login/oauth/authorize?scope=user:email&client_id=49ec56687000a737f1d5&redirect_uri=${encodeURIComponent(redirectUri)}`,
       'Login with Github',
       'height=603,width=1020'
     );

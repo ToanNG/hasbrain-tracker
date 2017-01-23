@@ -2,6 +2,7 @@ import 'isomorphic-fetch';
 
 import {
   API_SERVER,
+  RUNNING_TEST_SERVER,
   GET_TODAY_ACTIVITY,
   GET_TODAY_ACTIVITY_SUCCESS,
   GET_TODAY_ACTIVITY_FAIL,
@@ -92,39 +93,111 @@ export function showKnowledge(token, activityId) {
   };
 }
 
-export function submitAnswer(token, storyId, targetRepo) {
+// export function submitAnswer(token, storyId, targetRepo) {
+//   return dispatch => {
+//     dispatch({ type: SUBMIT_ANSWER })
+//     return fetch(`${API_SERVER}/api/circle/build`, {
+//       method: 'post',
+//       headers: {
+//         'Accept': 'application/json',
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${token}`,
+//       },
+//       body: JSON.stringify({
+//         story: storyId,
+//         repo: targetRepo,
+//       }),
+//     }).then((data) => {
+//       dispatch({ type: SUBMIT_ANSWER_SUCCESS, result: data })
+//     }).catch(() => {
+//       dispatch({ type: SUBMIT_ANSWER_FAIL })
+//     })
+//   }
+// }
+
+export function submitAnswer(token, userId, activityNo, githubRepo) {
   return dispatch => {
-    dispatch({ type: SUBMIT_ANSWER })
-    return fetch(`${API_SERVER}/api/circle/build`, {
+    return fetch(`${RUNNING_TEST_SERVER}/api/test`, {
       method: 'post',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        story: storyId,
-        repo: targetRepo,
+        user_id: userId,
+        activity_no: activityNo,
+        github_repo: githubRepo,
       }),
-    }).then((data) => {
-      dispatch({ type: SUBMIT_ANSWER_SUCCESS, result: data })
-    }).catch(() => {
-      dispatch({ type: SUBMIT_ANSWER_FAIL })
+    }).then(response => {
+      if(response.status === 200) {
+        return response.json()
+      } else {
+        return response.text().then((err)=>{
+          throw new Error('Error: ' + err)
+        })
+      }
+    }).then(result => {
+      return result
     })
   }
-  // return {
-  //   types: [SUBMIT_ANSWER, SUBMIT_ANSWER_SUCCESS, SUBMIT_ANSWER_FAIL],
-  //   api: fetch(`${API_SERVER}/api/circle/build`, {
-  //     method: 'post',
-  //     headers: {
-  //       'Accept': 'application/json',
-  //       'Content-Type': 'application/json',
-  //       'Authorization': `Bearer ${token}`,
-  //     },
-  //     body: JSON.stringify({
-  //       story: storyId,
-  //       repo: targetRepo,
-  //     }),
-  //   }),
-  // };
+}
+
+export function submitAnswerCpp(token, userId, activityNo, githubRepo) {
+  return dispatch => {
+    return fetch(`http://54.169.226.33/api/test`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        activity_no: activityNo,
+        github_repo: githubRepo,
+      }),
+    }).then(response => {
+      if(response.status === 200) {
+        return response.text()
+      } else {
+        return response.text().then((err)=>{
+          throw new Error('Error: ' + err)
+        })
+      }
+    }).then(result => {
+      return result
+    })
+  }
+}
+
+export function submitAnswerJava(token, userId, activityNo, githubRepo) {
+  return dispatch => {
+    return fetch(`http://54.255.179.180/api/test`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        activity_no: activityNo,
+        github_repo: githubRepo,
+      }),
+    }).then(response => {
+      if(response.status === 200) {
+        return response.text()
+      } else {
+        return response.text().then((err)=>{
+          throw new Error('Error: ' + err)
+        })
+      }
+    }).then(result => {
+      return result
+    })
+  }
+}
+
+export function deleteTodayActivity() {
+  return dispatch => {
+    return dispatch({ type: 'DELETE_TODAY_ACTIVITY' });
+  }
 }

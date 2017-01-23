@@ -2,10 +2,10 @@ import 'isomorphic-fetch';
 
 import { API_SERVER } from 'constants/ActionTypes.js';
 
-export function getPartner(token) {
+export function get(token, activityId) {
   return {
-    types: ['GET_PARTNER', 'GET_PARTNER_SUCCESS', 'GET_PARTNER_FAIL'],
-    api: fetch(`${API_SERVER}/api/pairing/me`, {
+    types: ['GET_QUIZ', 'GET_QUIZ_SUCCESS', 'GET_QUIZ_FAIL'],
+    api: fetch(`${API_SERVER}/api/quiz/` + activityId, {
       method: 'get',
       headers: {
         'Authorization' : `Bearer ${token}`,

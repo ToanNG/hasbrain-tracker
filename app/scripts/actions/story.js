@@ -27,3 +27,36 @@ export function completeStory(token, activityId) {
     }),
   };
 }
+
+export function setCompleteStory(token, storyId) {
+  return dispatch => {
+    return fetch(`${API_SERVER}/api/story/set-complete/${storyId}`, {
+      method: 'get',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      }
+    }).then(response => {
+      return response.status;
+    });
+  }
+}
+
+export function addWorkingTime(token, storyId, time) {
+  return dispatch => {
+    return fetch(`${API_SERVER}/api/story/add-working-time/${storyId}`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        time: time
+      })
+    }).then(response => {
+      return response.status;
+    });
+  }
+}
