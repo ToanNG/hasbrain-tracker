@@ -40,6 +40,11 @@ import * as PairingActions from 'actions/pairing';
 import * as QuizActions from 'actions/quiz';
 import * as SettingsActions from 'actions/settings';
 
+let pubnub = PUBNUB({
+  publish_key: 'pub-c-8807fd6d-6f87-486f-9fd6-5869bc37e93a',
+  subscribe_key: 'sub-c-861f96a2-3c20-11e6-9236-02ee2ddab7fe',
+});
+
 @connect(
   mapStateToProps,
   mapDispatchToProps
@@ -108,6 +113,19 @@ class Home extends Component {
     const thisUser = this.props.user.get('currentUser');
     const nextUser = nextProps.user.get('currentUser');
     if (nextUser !== thisUser && nextUser) {
+      console.log(`Subscribing to channel hasbrain_test_${nextUser._id} ...`);
+      pubnub.subscribe({
+        channel: `hasbrain_test_${nextUser._id}`,
+        message: (message, env, ch, timer, magic_ch) => {
+          if(message.type && message.status && message.type === 'test_result' && message.status === 1){
+            this._getTodayActivity();
+            // this.setState({openMoveToKnowledgeDialog : true});
+            // this.confirm.dismiss();
+          } else {
+            this._handleOpenDialog(message.text);
+          }
+        },
+      });
       tempUser = nextUser;
 
       let oldUser = UserKit.getCurrentProfile();
@@ -248,6 +266,17 @@ class Home extends Component {
     const token = auth.get('token');
     const todayActivity = activity.get('todayActivity');
     actions.showKnowledge(token, todayActivity._id);
+  }
+
+  _handleClickSolveTheProblem = () => {
+    const {auth, activity, actions} = this.props;
+    const token = auth.get('token');
+    const todayActivity = activity.get('todayActivity');
+    actions.update(token, todayActivity.storyId, {
+      "showKnowledge" : false,
+      "solvedProblem" : false,
+      "isCompleted" : false
+    });
   }
 
   _handleCountdownEnd = () => {
@@ -637,8 +666,8 @@ class Home extends Component {
                   {description}
                 </CardText>
                 {
-                  (showKnowledge)?
-                  <div>
+                  (showKnowledge)
+                  ? <div>
                     <Divider />
                     <CardHeader
                       title='Knowledge'
@@ -652,39 +681,28 @@ class Home extends Component {
                     <CardText dangerouslySetInnerHTML={{__html: knowledge}} />
                     <Divider />
                     {
-                      (!solvedProblem) ?
-                      <div>
-                        <CardHeader
-                          title='Practice'
-                          subtitle='Solve the problem again'
-                          avatar={
-                            <Avatar
-                              icon={<FontIcon className='material-icons'>vpn_key</FontIcon>}
-                              color={Colors.green500}
-                              backgroundColor={Colors.grey100} />
-                          } />
-                        <CardText>
-                          <div dangerouslySetInnerHTML={{__html: problem}} />
-                          {
-                            (todayActivity.buddyCompleted === false && partner) ?
-                            <div>
-                              <Divider /><br/><i>You're finished it and you need to help your buddy overcome this challenge to continue!</i>
-                            </div> :
-                            <AnswerForm
-                            status={isSubmitting ? 'pending' : 'idle'}
-                            onSubmit={this._handleSubmit} />
-                          }
-                        </CardText>
-                      </div> :
-                      <CardActions>
-                        <FlatButton
-                        label='Finish this activity'
-                        primary={true}
-                        onClick={this._handleClickSkip} />
-                      </CardActions>
+                      (todayActivity.buddyCompleted && todayActivity.buddyCompleted === false && partner)
+                      ? <div>
+                        <Divider /><br/><i>You are finished it and you need to help your buddy overcome this challenge to continue!</i>
+                      </div>
+                      : (
+                        (solvedProblem)
+                        ? <CardActions>
+                            <FlatButton
+                            label='Finish this activity'
+                            primary={true}
+                            onClick={this._handleClickSkip} />
+                          </CardActions>
+                        : <CardActions>
+                            <FlatButton
+                            label='Solve the problem'
+                            primary={true}
+                            onClick={this._handleClickSolveTheProblem} />
+                          </CardActions>
+                      )
                     }
-                  </div>:
-                  <div>
+                  </div>
+                  : <div>
                     <Divider />
                     <CardHeader
                       title='Challenge'
@@ -700,43 +718,53 @@ class Home extends Component {
                           backgroundColor={Colors.grey100} />
                       } />
                     {
-                      (todayActivity.buddyCompleted && todayActivity.buddyCompleted === false && partner) ?
-                      <div>
-                        <Divider /><br/><i>You're finished it and you need to help your buddy overcome this challenge to continue!</i>
-                      </div> :
-                      (
-                        (tester) ?
-                        (
-                          (this.state.displayMoveToKnowledgeButton) ?
-                          <div>
-                            <CardText dangerouslySetInnerHTML={{__html: problem}} />
-                            <Divider />
-                            <CardActions>
-                              <FlatButton
-                                label='Learn about the fundamentals now'
-                                primary={true}
-                                onClick={this._handleClickLearnThis} />
-                            </CardActions>
-                          </div> :
-                          <CardText>
-                            <div dangerouslySetInnerHTML={{__html: problem}} />
-                            <AnswerForm
-                              status={isSubmitting ? 'pending' : 'idle'}
-                              onSubmit={this._handleSubmit} />
-                          </CardText>
-                        ) :
-                        <div>
-                          <CardText dangerouslySetInnerHTML={{__html: knowledge}} />
+                      (this.state.displayMoveToKnowledgeButton)
+                      ? <div>
+                          <CardText dangerouslySetInnerHTML={{__html: problem}} />
                           <Divider />
                           <CardActions>
                             <FlatButton
-                            label='Finish this activity'
-                            primary={true}
-                            onClick={this._handleClickSkip} />
+                              label='Learn about the fundamentals now'
+                              primary={true}
+                              onClick={this._handleClickLearnThis} />
                           </CardActions>
                         </div>
+                      : (
+                        (todayActivity.answerType === 'typeFormQuiz')
+                        ? <div>
+                            <CardText dangerouslySetInnerHTML={{__html: problem}} />
+                            <Divider />
+                            <iframe
+                              style={{
+                                width: '100%',
+                                height: '500px',
+                                border: 'none'
+                              }}
+                              src={"https://hasbrain.typeform.com/to/"+todayActivity.typeformId+"?student_id="+currentUser._id+"&story_id="+todayActivity.storyId}
+                            ></iframe>
+                          </div>
+                        : (
+                          (tester)
+                          ? <CardText>
+                              <div dangerouslySetInnerHTML={{__html: problem}} />
+                              <AnswerForm
+                                status={isSubmitting ? 'pending' : 'idle'}
+                                onSubmit={this._handleSubmit} />
+                            </CardText>
+                        : <div>
+                            <CardText dangerouslySetInnerHTML={{__html: knowledge}} />
+                            <Divider />
+                            <CardActions>
+                              <FlatButton
+                              label='Finish this activity'
+                              primary={true}
+                              onClick={this._handleClickSkip} />
+                            </CardActions>
+                          </div>
+                        )
                       )
                     }
+
                     <iframe src={"http://hasbrain.com/forum/"+todayActivity._id} width="100%" height="800" style={{border:'none'}}></iframe>
                   </div>
                 }
