@@ -201,3 +201,18 @@ export function deleteTodayActivity() {
     return dispatch({ type: 'DELETE_TODAY_ACTIVITY' });
   }
 }
+
+export function update(token, storyId, body) {
+  return {
+    types: ['UPDATE_STORY', 'UPDATE_STORY_SUCCESS', 'UPDATE_STORY_FAIL'],
+    api: fetch(`${API_SERVER}/api/story/update/${storyId}`, {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    }),
+  };
+}

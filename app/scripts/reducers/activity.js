@@ -41,6 +41,9 @@ export default function activity(state = INITIAL_STATE, action) {
     case 'DELETE_TODAY_ACTIVITY':
       return state.set('todayActivity', null);
 
+    case 'UPDATE_STORY_SUCCESS':
+      return state.set('todayActivity', action.result);
+      
     default:
       return state;
   }
