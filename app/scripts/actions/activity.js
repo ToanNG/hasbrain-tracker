@@ -196,12 +196,6 @@ export function submitAnswerJava(token, userId, activityNo, githubRepo) {
   }
 }
 
-export function deleteTodayActivity() {
-  return dispatch => {
-    return dispatch({ type: 'DELETE_TODAY_ACTIVITY' });
-  }
-}
-
 export function update(token, storyId, body) {
   return {
     types: ['UPDATE_STORY', 'UPDATE_STORY_SUCCESS', 'UPDATE_STORY_FAIL'],
