@@ -118,9 +118,9 @@ class Home extends Component {
         channel: `hasbrain_test_${nextUser._id}`,
         message: (message, env, ch, timer, magic_ch) => {
           if(message.type && message.status && message.type === 'test_result' && message.status === 1){
-            this._getTodayActivity();
-            // this.setState({openMoveToKnowledgeDialog : true});
-            // this.confirm.dismiss();
+            // this._getTodayActivity();
+            this.setState({openMoveToKnowledgeDialog : true});
+            this.confirm.dismiss();
           } else {
             this._handleOpenDialog(message.text);
           }
@@ -605,7 +605,6 @@ class Home extends Component {
           period = todayActivity.workingTime;
         }
         UserKit.track('learning_time', {activity_id: todayActivity._id, activity_name: todayActivity.name, student_id: currentUser._id, student_name: currentUser.name, timestamp: new Date().getTime(), period: period});
-        actions.deleteTodayActivity();
         userActions.addPoints(token, points).then(()=>{
           userActions.updateChaining(token, 'increase');
         });
@@ -615,6 +614,12 @@ class Home extends Component {
 
   _handleNewComment = (comment) => {
     console.log(comment.text);
+  }
+
+  _handleLogoutTap = _ => {
+    console.log('Bye bye ~~~');
+    chrome.storage.local.clear();
+    location.reload();
   }
 
   render = () => {
@@ -810,7 +815,8 @@ class Home extends Component {
           (todayActivity) ?
           <div>
             <FloatingActionButton secondary={true} onTouchTap={this._handleShowMapTap} className='showMap'><FontIcon className='material-icons'>map</FontIcon></FloatingActionButton>
-            {(!isCompleted && !solvedProblem) && <FloatingActionButton onTouchTap={this._handleGiveUpTap} className='giveUp'><FontIcon className='material-icons'>exit_to_app</FontIcon></FloatingActionButton>}
+            {(!isCompleted && !solvedProblem) && <FloatingActionButton onTouchTap={this._handleGiveUpTap} className='giveUp'><FontIcon className='material-icons'>clear</FontIcon></FloatingActionButton>}
+            <FloatingActionButton secondary={true} onTouchTap={this._handleLogoutTap} className='logout'><FontIcon className='material-icons'>exit_to_app</FontIcon></FloatingActionButton>
 
             <Dialog
               title='Notice'
