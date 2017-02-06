@@ -63,6 +63,15 @@ pre[class*="language-"] {
     z-index:1000;
     margin: 15px 10px;
   }
+
+  button.logout{
+    position: absolute!important;
+    top: 130px;
+    right: 0;
+    padding: 10px 20px;
+    z-index:1000;
+    margin: 15px 10px;
+  }
 }
 
 .login {
@@ -177,7 +186,7 @@ pre[class*="language-"] {
 }
 
 .node text {
-  font-size:10px; 
+  font-size:10px;
   font-family:sans-serif;
 }
 
@@ -211,7 +220,7 @@ pre[class*="language-"] {
 .defaultNode{
   animation: blinker 1.0s cubic-bezier(.5, 0, 1, 1) infinite alternate;
 }
-@keyframes blinker {  
+@keyframes blinker {
   from { opacity: 1; }
   to { opacity: 0; }
 }
