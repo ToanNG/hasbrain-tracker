@@ -111,12 +111,40 @@ class ActivityTree extends Component {
         }
     }
 
+    _handleClickOnMap = (d, canClickOnNode) => {
+        if (canClickOnNode) {
+            let flag = true;
+            const {auth, actions, activity} = this.props;
+
+            if (!d.isComplete && d.nodeType === 'activity') {
+                if (d.dependency && d.dependency.length > 0 && d.isLocked) {
+                    alert('Does not meet the requirements! You must finish another nodes to active this one!');
+                    flag = false;
+                    return;
+                }
+
+                if (flag) {
+                    UserKit.track('start_excercise', {
+                        timestamp: new Date().getTime(),
+                        activity_id: d._id
+                    });
+                    const token = auth.get('token');
+                    actions.createActivity(token, d._id);
+                    this.props.clickOnMapSuccess && this.props.clickOnMapSuccess();
+                }
+            } else {
+                alert('You have finished this activity!');
+            }
+        } else {
+            alert('This map does not allow you to click on node');
+        }
+    }
+
     render = () => {
-        const {canClickOnNode} = this.props
         return (
             <D3Tree
                 treeData={this._treeData()}
-                onClick={this.props.onClick}
+                onClick={this._handleClickOnMap}
                 canClickOnNode={this.props.canClickOnNode} />
         );
     }

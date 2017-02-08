@@ -113,33 +113,8 @@ class Activity extends Component {
       }
     }
 
-    _handleClickOnMap = (d, canClickOnNode) => {
-        if (canClickOnNode) {
-            let flag = true;
-            const {auth, actions, activity} = this.props;
-
-            if (!d.isComplete && d.nodeType === 'activity') {
-                if (d.dependency && d.dependency.length > 0 && d.isLocked) {
-                    alert('Does not meet the requirements! You must finish another nodes to active this one!');
-                    flag = false;
-                    return;
-                }
-
-                if (flag) {
-                    UserKit.track('start_excercise', {
-                        timestamp: new Date().getTime(),
-                        activity_id: d._id
-                    });
-                    const token = auth.get('token');
-                    actions.createActivity(token, d._id);
-                    this.setState({openShowMapDialog: false, openSelectAnotherNode: false});
-                }
-            } else {
-                alert('You have finished this activity!');
-            }
-        } else {
-            alert('This map does not allow you to click on node');
-        }
+    _handleClickOnMapSuccess = () => {
+        this.setState({openShowMapDialog: false, openSelectAnotherNode: false});
     }
 
     _getStory = () => {
@@ -168,49 +143,6 @@ class Activity extends Component {
         let currentTime = new Date().getTime();
         let workingTime = (currentTime - startWorkingTime)/1000;
         storyActions.addWorkingTime(token, todayActivity.storyId, workingTime);
-    }
-
-    _handleClickSkip = () => {
-        this._handleSetWorkingTimeBeforeLeaving();
-        const {
-            auth,
-            activity,
-            storyActions,
-            actions,
-            user,
-            settings,
-            userActions
-        } = this.props;
-        const token = auth.get('token');
-        const todayActivity = activity.get('todayActivity');
-        const currentUser = user.get('currentUser');
-        storyActions.completeStory(token, todayActivity._id).then(() => {
-            const sett = settings.get('settings');
-            let chainingLevel = (currentUser.chaining + 1);
-            chainingLevel = (chainingLevel > sett.maxChainingLevel)
-                ? sett.maxChainingLevel
-                : chainingLevel;
-            let points = sett.chainingPoints * chainingLevel;
-            this.setState({
-                startWorkingTime: 0
-            }, () => {
-                let period = 0;
-                if (todayActivity.workingTime) {
-                    period = todayActivity.workingTime;
-                }
-                UserKit.track('learning_time', {
-                    activity_id: todayActivity._id,
-                    activity_name: todayActivity.name,
-                    student_id: currentUser._id,
-                    student_name: currentUser.name,
-                    timestamp: new Date().getTime(),
-                    period: period
-                });
-                userActions.addPoints(token, points).then(() => {
-                    userActions.updateChaining(token, 'increase');
-                });
-            });
-        });
     }
 
     _handleLogoutTap = _ => {
@@ -269,7 +201,7 @@ class Activity extends Component {
         this.setState({openMoveToKnowledgeDialog: false});
     }
 
-    _handleSkipAndFinish = () => {
+    _handleClickSkip = () => {
         this._handleSetWorkingTimeBeforeLeaving();
         const {
             auth,
@@ -309,6 +241,7 @@ class Activity extends Component {
                 userActions.addPoints(token, points).then(() => {
                     userActions.updateChaining(token, 'increase');
                 });
+                this._getTodayActivity();
             });
         });
     }
@@ -415,7 +348,7 @@ class Activity extends Component {
                     autoDetectWindowHeight={false}>
                         <ActivityTree
                             canClickOnNode={false}
-                            onClick={this._handleClickOnMap}/>
+                            clickOnMapSuccess={this._handleClickOnMapSuccess} />
                 </Dialog>
 
                 <Dialog modal={true}
@@ -433,13 +366,13 @@ class Activity extends Component {
                     autoDetectWindowHeight={false}>
                     <ActivityTree
                         canClickOnNode={true}
-                        onClick={this._handleClickOnMap} />
+                        clickOnMapSuccess={this._handleClickOnMapSuccess} />
                 </Dialog>
 
                 <Dialog title='Notice' actions={[
                         <FlatButton label = 'Skip and finish'
                             secondary = {true}
-                            onTouchTap = {this._handleSkipAndFinish}
+                            onTouchTap = {this._handleClickSkip}
                         />,
                         <FlatButton label = 'Yes'
                             primary = {true}
