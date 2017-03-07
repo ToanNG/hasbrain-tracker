@@ -3,7 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Map } from 'immutable';
 import Shepherd from 'tether-shepherd';
- 
+
 
 import Paper from 'material-ui/lib/paper';
 import List from 'material-ui/lib/lists/list';
@@ -45,13 +45,13 @@ class Enroll extends Component {
         const thisUser = this.props.user.get('currentUser');
         const nextUser = nextProps.user.get('currentUser');
         if (nextUser !== thisUser && nextUser) {
-            var oldUser = UserKit.getCurrentProfile();
+            var oldUser = UserKit.getProfileId();
             var name = '';
             if(nextUser.name && nextUser.name.first && nextUser.name.last) {
                 name = nextUser.name.first + ' ' + nextUser.name.last;
             }
             UserKit.createNewProfile(nextUser._id, { email: nextUser.email, name: name }, function(){
-                var curUser = UserKit.getCurrentProfile();
+                var curUser = UserKit.getProfileId();
                 if(oldUser !== curUser) {
                     UserKit.alias(oldUser, function(){
                         console.log('Created alias successfully!');
@@ -207,7 +207,7 @@ class Enroll extends Component {
                         d.isCollapse = true;
                     }
                 }
-                
+
                 if(d.dependency && d.dependency.length > 0){
                     d.isLocked = true;
                 } else {

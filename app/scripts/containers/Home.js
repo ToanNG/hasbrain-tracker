@@ -128,13 +128,13 @@ class Home extends Component {
       });
       tempUser = nextUser;
 
-      let oldUser = UserKit.getCurrentProfile();
+      let oldUser = UserKit.getProfileId();
       let name = '';
       if(nextUser.name && nextUser.name.first && nextUser.name.last) {
           name = nextUser.name.first + ' ' + nextUser.name.last;
       }
       UserKit.createNewProfile(nextUser._id, { email: nextUser.email, name: name }, function(){
-        let curUser = UserKit.getCurrentProfile();
+        let curUser = UserKit.getProfileId();
         if(oldUser !== curUser) {
           UserKit.alias(oldUser, function(){
             console.log('Created alias successfully!');
