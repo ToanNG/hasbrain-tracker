@@ -44225,13 +44225,13 @@
 	            var thisUser = _this.props.user.get('currentUser');
 	            var nextUser = nextProps.user.get('currentUser');
 	            if (nextUser !== thisUser && nextUser) {
-	                var oldUser = UserKit.getCurrentProfile();
+	                var oldUser = UserKit.getProfileId();
 	                var name = '';
 	                if (nextUser.name && nextUser.name.first && nextUser.name.last) {
 	                    name = nextUser.name.first + ' ' + nextUser.name.last;
 	                }
 	                UserKit.createNewProfile(nextUser._id, { email: nextUser.email, name: name }, function () {
-	                    var curUser = UserKit.getCurrentProfile();
+	                    var curUser = UserKit.getProfileId();
 	                    if (oldUser !== curUser) {
 	                        UserKit.alias(oldUser, function () {
 	                            console.log('Created alias successfully!');
@@ -48861,7 +48861,9 @@
 	            var viewerWidth = window.innerWidth,
 	                viewerHeight = window.innerHeight;
 
-	            var tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
+	            var tree = d3.layout.tree().separation(function (a, b) {
+	                return a.parent == root && b.parent == root ? 3 : 1;
+	            }).size([viewerHeight, viewerWidth]);
 
 	            var diagonal = d3.svg.diagonal().projection(function (d) {
 	                return [d.y, d.x];
@@ -48978,7 +48980,7 @@
 	                    links = tree.links(nodes);
 
 	                nodes.forEach(function (d) {
-	                    d.y = d.depth * 100;
+	                    d.y = d.depth * 200;
 	                });
 
 	                node = svgGroup.selectAll("g.node").data(nodes, function (d) {
@@ -49355,6 +49357,11 @@
 
 	var SettingsActions = _interopRequireWildcard(_actionsSettings);
 
+	var pubnub = PUBNUB({
+	  publish_key: 'pub-c-8807fd6d-6f87-486f-9fd6-5869bc37e93a',
+	  subscribe_key: 'sub-c-861f96a2-3c20-11e6-9236-02ee2ddab7fe'
+	});
+
 	var Home = (function (_Component) {
 	  _inherits(Home, _Component);
 
@@ -49414,7 +49421,9 @@
 	      var token = auth.get('token');
 	      var currentTime = new Date().getTime();
 	      var workingTime = (currentTime - startWorkingTime) / 1000;
-	      storyActions.addWorkingTime(token, todayActivity.storyId, workingTime);
+	      if (token && todayActivity) {
+	        storyActions.addWorkingTime(token, todayActivity.storyId, workingTime);
+	      }
 	    };
 
 	    this.componentWillUnmount = function () {
@@ -49434,15 +49443,28 @@
 	      var nextUser = nextProps.user.get('currentUser');
 	      if (nextUser !== thisUser && nextUser) {
 	        (function () {
+	          console.log('Subscribing to channel hasbrain_test_' + nextUser._id + ' ...');
+	          pubnub.subscribe({
+	            channel: 'hasbrain_test_' + nextUser._id,
+	            message: function message(_message, env, ch, timer, magic_ch) {
+	              if (_message.type && _message.status && _message.type === 'test_result' && _message.status === 1) {
+	                // this._getTodayActivity();
+	                _this.setState({ openMoveToKnowledgeDialog: true });
+	                _this.confirm.dismiss();
+	              } else {
+	                _this._handleOpenDialog(_message.text);
+	              }
+	            }
+	          });
 	          tempUser = nextUser;
 
-	          var oldUser = UserKit.getCurrentProfile();
+	          var oldUser = UserKit.getProfileId();
 	          var name = '';
 	          if (nextUser.name && nextUser.name.first && nextUser.name.last) {
 	            name = nextUser.name.first + ' ' + nextUser.name.last;
 	          }
 	          UserKit.createNewProfile(nextUser._id, { email: nextUser.email, name: name }, function () {
-	            var curUser = UserKit.getCurrentProfile();
+	            var curUser = UserKit.getProfileId();
 	            if (oldUser !== curUser) {
 	              UserKit.alias(oldUser, function () {
 	                console.log('Created alias successfully!');
@@ -49604,11 +49626,26 @@
 	      actions.showKnowledge(token, todayActivity._id);
 	    };
 
-	    this._handleCountdownEnd = function () {
+	    this._handleClickSolveTheProblem = function () {
 	      var _props8 = _this.props;
 	      var auth = _props8.auth;
 	      var activity = _props8.activity;
 	      var actions = _props8.actions;
+
+	      var token = auth.get('token');
+	      var todayActivity = activity.get('todayActivity');
+	      actions.update(token, todayActivity.storyId, {
+	        "showKnowledge": false,
+	        "solvedProblem": false,
+	        "isCompleted": false
+	      });
+	    };
+
+	    this._handleCountdownEnd = function () {
+	      var _props9 = _this.props;
+	      var auth = _props9.auth;
+	      var activity = _props9.activity;
+	      var actions = _props9.actions;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -49624,13 +49661,13 @@
 	    };
 
 	    this._handleSubmit = function (repoUrl) {
-	      var _props9 = _this.props;
-	      var auth = _props9.auth;
-	      var activity = _props9.activity;
-	      var user = _props9.user;
-	      var actions = _props9.actions;
-	      var storyActions = _props9.storyActions;
-	      var userActions = _props9.userActions;
+	      var _props10 = _this.props;
+	      var auth = _props10.auth;
+	      var activity = _props10.activity;
+	      var user = _props10.user;
+	      var actions = _props10.actions;
+	      var storyActions = _props10.storyActions;
+	      var userActions = _props10.userActions;
 
 	      var token = auth.get('token');
 	      var self = _this;
@@ -49768,10 +49805,10 @@
 	    };
 
 	    this._treeData = function () {
-	      var _props10 = _this.props;
-	      var activity = _props10.activity;
-	      var story = _props10.story;
-	      var user = _props10.user;
+	      var _props11 = _this.props;
+	      var activity = _props11.activity;
+	      var story = _props11.story;
+	      var user = _props11.user;
 
 	      var currentUser = user.get('currentUser');
 	      if (currentUser && currentUser.enrollments && currentUser.enrollments.length > 0) {
@@ -49849,10 +49886,10 @@
 	    this._handleClickOnMap = function (d, canClickOnNode) {
 	      if (canClickOnNode) {
 	        var flag = true;
-	        var _props11 = _this.props;
-	        var auth = _props11.auth;
-	        var actions = _props11.actions;
-	        var activity = _props11.activity;
+	        var _props12 = _this.props;
+	        var auth = _props12.auth;
+	        var actions = _props12.actions;
+	        var activity = _props12.activity;
 
 	        // const todayActivity = activity.get('todayActivity');
 	        // if(todayActivity) {
@@ -49909,10 +49946,10 @@
 	        openSelectAnotherNode: true,
 	        countdown: 1500
 	      }, function () {
-	        var _props12 = this.props;
-	        var auth = _props12.auth;
-	        var actions = _props12.actions;
-	        var activity = _props12.activity;
+	        var _props13 = this.props;
+	        var auth = _props13.auth;
+	        var actions = _props13.actions;
+	        var activity = _props13.activity;
 
 	        var token = auth.get('token');
 	        var todayActivity = activity.get('todayActivity');
@@ -49921,10 +49958,10 @@
 	    };
 
 	    this._handleMoveToKnowledge = function () {
-	      var _props13 = _this.props;
-	      var auth = _props13.auth;
-	      var activity = _props13.activity;
-	      var actions = _props13.actions;
+	      var _props14 = _this.props;
+	      var auth = _props14.auth;
+	      var activity = _props14.activity;
+	      var actions = _props14.actions;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -49934,14 +49971,14 @@
 
 	    this._handleSkipAndFinish = function () {
 	      _this._handleSetWorkingTimeBeforeLeaving();
-	      var _props14 = _this.props;
-	      var auth = _props14.auth;
-	      var activity = _props14.activity;
-	      var storyActions = _props14.storyActions;
-	      var actions = _props14.actions;
-	      var user = _props14.user;
-	      var userActions = _props14.userActions;
-	      var settings = _props14.settings;
+	      var _props15 = _this.props;
+	      var auth = _props15.auth;
+	      var activity = _props15.activity;
+	      var storyActions = _props15.storyActions;
+	      var actions = _props15.actions;
+	      var user = _props15.user;
+	      var userActions = _props15.userActions;
+	      var settings = _props15.settings;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -49957,7 +49994,6 @@
 	            period = todayActivity.workingTime;
 	          }
 	          UserKit.track('learning_time', { activity_id: todayActivity._id, activity_name: todayActivity.name, student_id: currentUser._id, student_name: currentUser.name, timestamp: new Date().getTime(), period: period });
-	          actions.deleteTodayActivity();
 	          userActions.addPoints(token, points).then(function () {
 	            userActions.updateChaining(token, 'increase');
 	          });
@@ -49967,14 +50003,14 @@
 
 	    this._handleClickSkip = function () {
 	      _this._handleSetWorkingTimeBeforeLeaving();
-	      var _props15 = _this.props;
-	      var auth = _props15.auth;
-	      var activity = _props15.activity;
-	      var storyActions = _props15.storyActions;
-	      var actions = _props15.actions;
-	      var user = _props15.user;
-	      var settings = _props15.settings;
-	      var userActions = _props15.userActions;
+	      var _props16 = _this.props;
+	      var auth = _props16.auth;
+	      var activity = _props16.activity;
+	      var storyActions = _props16.storyActions;
+	      var actions = _props16.actions;
+	      var user = _props16.user;
+	      var settings = _props16.settings;
+	      var userActions = _props16.userActions;
 
 	      var token = auth.get('token');
 	      var todayActivity = activity.get('todayActivity');
@@ -49990,7 +50026,6 @@
 	            period = todayActivity.workingTime;
 	          }
 	          UserKit.track('learning_time', { activity_id: todayActivity._id, activity_name: todayActivity.name, student_id: currentUser._id, student_name: currentUser.name, timestamp: new Date().getTime(), period: period });
-	          actions.deleteTodayActivity();
 	          userActions.addPoints(token, points).then(function () {
 	            userActions.updateChaining(token, 'increase');
 	          });
@@ -50002,12 +50037,18 @@
 	      console.log(comment.text);
 	    };
 
+	    this._handleLogoutTap = function (_) {
+	      console.log('Bye bye ~~~');
+	      chrome.storage.local.clear();
+	      location.reload();
+	    };
+
 	    this.render = function () {
-	      var _props16 = _this.props;
-	      var activity = _props16.activity;
-	      var user = _props16.user;
-	      var pairing = _props16.pairing;
-	      var quiz = _props16.quiz;
+	      var _props17 = _this.props;
+	      var activity = _props17.activity;
+	      var user = _props17.user;
+	      var pairing = _props17.pairing;
+	      var quiz = _props17.quiz;
 	      var isSubmitting = _this.state.isSubmitting;
 
 	      var todayActivity = activity.get('todayActivity');
@@ -50092,45 +50133,30 @@
 	                    backgroundColor: _materialUiLibStylesColors2['default'].grey100 }) }),
 	                _react2['default'].createElement(_materialUiLibCardCardText2['default'], { dangerouslySetInnerHTML: { __html: knowledge } }),
 	                _react2['default'].createElement(_materialUiLibDivider2['default'], null),
-	                !solvedProblem ? _react2['default'].createElement(
+	                todayActivity.buddyCompleted && todayActivity.buddyCompleted === false && partner ? _react2['default'].createElement(
 	                  'div',
 	                  null,
-	                  _react2['default'].createElement(_materialUiLibCardCardHeader2['default'], {
-	                    title: 'Practice',
-	                    subtitle: 'Solve the problem again',
-	                    avatar: _react2['default'].createElement(_materialUiLibAvatar2['default'], {
-	                      icon: _react2['default'].createElement(
-	                        _materialUiLibFontIcon2['default'],
-	                        { className: 'material-icons' },
-	                        'vpn_key'
-	                      ),
-	                      color: _materialUiLibStylesColors2['default'].green500,
-	                      backgroundColor: _materialUiLibStylesColors2['default'].grey100 }) }),
+	                  _react2['default'].createElement(_materialUiLibDivider2['default'], null),
+	                  _react2['default'].createElement('br', null),
 	                  _react2['default'].createElement(
-	                    _materialUiLibCardCardText2['default'],
+	                    'i',
 	                    null,
-	                    _react2['default'].createElement('div', { dangerouslySetInnerHTML: { __html: problem } }),
-	                    todayActivity.buddyCompleted === false && partner ? _react2['default'].createElement(
-	                      'div',
-	                      null,
-	                      _react2['default'].createElement(_materialUiLibDivider2['default'], null),
-	                      _react2['default'].createElement('br', null),
-	                      _react2['default'].createElement(
-	                        'i',
-	                        null,
-	                        'You\'re finished it and you need to help your buddy overcome this challenge to continue!'
-	                      )
-	                    ) : _react2['default'].createElement(_componentsAnswerForm2['default'], {
-	                      status: isSubmitting ? 'pending' : 'idle',
-	                      onSubmit: _this._handleSubmit })
+	                    'You are finished it and you need to help your buddy overcome this challenge to continue!'
 	                  )
-	                ) : _react2['default'].createElement(
+	                ) : solvedProblem ? _react2['default'].createElement(
 	                  _materialUiLibCardCardActions2['default'],
 	                  null,
 	                  _react2['default'].createElement(_materialUiLibFlatButton2['default'], {
 	                    label: 'Finish this activity',
 	                    primary: true,
 	                    onClick: _this._handleClickSkip })
+	                ) : _react2['default'].createElement(
+	                  _materialUiLibCardCardActions2['default'],
+	                  null,
+	                  _react2['default'].createElement(_materialUiLibFlatButton2['default'], {
+	                    label: 'Solve the problem',
+	                    primary: true,
+	                    onClick: _this._handleClickSolveTheProblem })
 	                )
 	              ) : _react2['default'].createElement(
 	                'div',
@@ -50156,17 +50182,7 @@
 	                    ),
 	                    color: _materialUiLibStylesColors2['default'].red500,
 	                    backgroundColor: _materialUiLibStylesColors2['default'].grey100 }) }),
-	                todayActivity.buddyCompleted && todayActivity.buddyCompleted === false && partner ? _react2['default'].createElement(
-	                  'div',
-	                  null,
-	                  _react2['default'].createElement(_materialUiLibDivider2['default'], null),
-	                  _react2['default'].createElement('br', null),
-	                  _react2['default'].createElement(
-	                    'i',
-	                    null,
-	                    'You\'re finished it and you need to help your buddy overcome this challenge to continue!'
-	                  )
-	                ) : tester ? _this.state.displayMoveToKnowledgeButton ? _react2['default'].createElement(
+	                _this.state.displayMoveToKnowledgeButton ? _react2['default'].createElement(
 	                  'div',
 	                  null,
 	                  _react2['default'].createElement(_materialUiLibCardCardText2['default'], { dangerouslySetInnerHTML: { __html: problem } }),
@@ -50179,7 +50195,20 @@
 	                      primary: true,
 	                      onClick: _this._handleClickLearnThis })
 	                  )
-	                ) : _react2['default'].createElement(
+	                ) : todayActivity.answerType === 'typeFormQuiz' ? _react2['default'].createElement(
+	                  'div',
+	                  null,
+	                  _react2['default'].createElement(_materialUiLibCardCardText2['default'], { dangerouslySetInnerHTML: { __html: problem } }),
+	                  _react2['default'].createElement(_materialUiLibDivider2['default'], null),
+	                  _react2['default'].createElement('iframe', {
+	                    style: {
+	                      width: '100%',
+	                      height: '500px',
+	                      border: 'none'
+	                    },
+	                    src: "https://hasbrain.typeform.com/to/" + todayActivity.typeformId + "?student_id=" + currentUser._id + "&story_id=" + todayActivity.storyId
+	                  })
+	                ) : tester ? _react2['default'].createElement(
 	                  _materialUiLibCardCardText2['default'],
 	                  null,
 	                  _react2['default'].createElement('div', { dangerouslySetInnerHTML: { __html: problem } }),
@@ -50266,6 +50295,15 @@
 	            _react2['default'].createElement(
 	              _materialUiLibFontIcon2['default'],
 	              { className: 'material-icons' },
+	              'clear'
+	            )
+	          ),
+	          _react2['default'].createElement(
+	            _materialUiLibFloatingActionButton2['default'],
+	            { secondary: true, onTouchTap: _this._handleLogoutTap, className: 'logout' },
+	            _react2['default'].createElement(
+	              _materialUiLibFontIcon2['default'],
+	              { className: 'material-icons' },
 	              'exit_to_app'
 	            )
 	          ),
@@ -50318,7 +50356,7 @@
 	            _react2['default'].createElement(_componentsD3Tree2['default'], {
 	              treeData: _this._treeData(),
 	              onClick: _this._handleClickOnMap,
-	              canClickOnNode: false })
+	              canClickOnNode: true })
 	          ),
 	          _react2['default'].createElement(
 	            _materialUiLibDialog2['default'],
@@ -67654,7 +67692,7 @@
 	exports.submitAnswer = submitAnswer;
 	exports.submitAnswerCpp = submitAnswerCpp;
 	exports.submitAnswerJava = submitAnswerJava;
-	exports.deleteTodayActivity = deleteTodayActivity;
+	exports.update = update;
 
 	__webpack_require__(237);
 
@@ -67842,9 +67880,18 @@
 	  };
 	}
 
-	function deleteTodayActivity() {
-	  return function (dispatch) {
-	    return dispatch({ type: 'DELETE_TODAY_ACTIVITY' });
+	function update(token, storyId, body) {
+	  return {
+	    types: ['UPDATE_STORY', 'UPDATE_STORY_SUCCESS', 'UPDATE_STORY_FAIL'],
+	    api: fetch(_constantsActionTypes.API_SERVER + '/api/story/update/' + storyId, {
+	      method: 'post',
+	      headers: {
+	        'Accept': 'application/json',
+	        'Content-Type': 'application/json',
+	        'Authorization': 'Bearer ' + token
+	      },
+	      body: JSON.stringify(body)
+	    })
 	  };
 	}
 
@@ -68232,8 +68279,8 @@
 	    case 'SHOW_KNOWLEDGE_SUCCESS':
 	      return state.set('todayActivity', action.result);
 
-	    case 'DELETE_TODAY_ACTIVITY':
-	      return state.set('todayActivity', null);
+	    case 'UPDATE_STORY_SUCCESS':
+	      return state.set('todayActivity', action.result);
 
 	    default:
 	      return state;
@@ -83533,7 +83580,7 @@
 
 
 	// module
-	exports.push([module.id, "body {\n  margin: 0;\n  font-family: 'Roboto', sans-serif;\n  font-size: 16px;\n  line-height: 1.4;\n}\n\nbody h1 {\n  color: #800080;\n  padding: 10px;\n}\n\npre[class*=\"language-\"] {\n  margin-bottom: 1em;\n}\n\n.wallpaper {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.footer {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  box-sizing: border-box;\n  width: 100%;\n  padding: 16px;\n  color: white;\n  text-align: center;\n  z-index: -1;\n}\n\n.screen {\n  position: absolute;\n  top: 0;\n  left: 0;\n  overflow: auto;\n  width: 100%;\n  height: 100%;\n}\n\n.screen button.showMap {\n  position: absolute !important;\n  top: 0;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 1000;\n  margin: 15px 10px;\n}\n\n.screen button.giveUp {\n  position: absolute !important;\n  top: 65px;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 1000;\n  margin: 15px 10px;\n}\n\n.login {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  max-width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.login .logo {\n  display: block;\n  height: 80px;\n  margin: 16px auto;\n}\n\n.login .or {\n  margin: 2px 0;\n  text-align: center;\n}\n\n.enroll {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n  z-index: 1 !important;\n}\n\n.enroll h2 {\n  margin-top: 8px;\n  font-weight: 400;\n  text-align: center;\n}\n\n.activity-card-container {\n  position: relative;\n  /*max-width: 1000px;*/\n  margin: 30px auto 80px;\n}\n\n.activity-card-container .activity-content {\n  float: left;\n  width: 65%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .activity-content p {\n  margin-top: 0;\n}\n\n.activity-card-container .activity-content img {\n  max-width: 100%;\n}\n\n.activity-card-container .company {\n  float: left;\n  width: 30%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .company p {\n  margin-top: 0;\n}\n\n.activity-card-container .company > div {\n  margin-bottom: 10px;\n}\n\n.screen-enter {\n  opacity: 0.01;\n}\n\n.screen-enter.screen-enter-active {\n  opacity: 1;\n  -webkit-transition: opacity 250ms 250ms ease-in;\n  transition: opacity 250ms 250ms ease-in;\n}\n\n.screen-leave {\n  opacity: 1;\n}\n\n.screen-leave.screen-leave-active {\n  opacity: 0.01;\n  -webkit-transition: opacity 250ms ease-in;\n  transition: opacity 250ms ease-in;\n}\n\n.hidden {\n  display: none;\n  visibility: hidden;\n  opacity: 0;\n}\n\n.text-center {\n  text-align: center;\n}\n\n.node {\n  cursor: pointer;\n}\n\n.overlay {\n  background-color: #fff;\n}\n\n.node circle {\n  fill: #fff;\n  /*stroke: steelblue;\n  stroke-width: 1.5px;*/\n}\n\n.node text {\n  font-size: 10px;\n  font-family: sans-serif;\n}\n\n.link {\n  fill: none;\n  stroke: #ddd;\n  stroke-width: 1.5px;\n}\n\n.templink {\n  fill: none;\n  stroke: red;\n  stroke-width: 3px;\n}\n\n.ghostCircle.show {\n  display: block;\n}\n\n.ghostCircle,\n.activeDrag .ghostCircle {\n  display: none;\n}\n\n#learning-tree {\n  width: 100%;\n  height: 100%;\n  background-color: #ccc;\n  display: block;\n}\n\n.defaultNode {\n  -webkit-animation: blinker 1s cubic-bezier(0.5, 0, 1, 1) infinite alternate;\n  animation: blinker 1s cubic-bezier(0.5, 0, 1, 1) infinite alternate;\n}\n\n@-webkit-keyframes blinker {\n  from {\n    opacity: 1;\n  }\n\n  to {\n    opacity: 0;\n  }\n}\n\n@keyframes blinker {\n  from {\n    opacity: 1;\n  }\n\n  to {\n    opacity: 0;\n  }\n}\n\n/*\n *  Onboarding Screen\n *\n */\n\n.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-top.shepherd-target-attached-left .shepherd-content:before,\n.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-top.shepherd-target-attached-right .shepherd-content:before,\n.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-bottom.shepherd-target-attached-left .shepherd-content:before,\n.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-bottom.shepherd-target-attached-right .shepherd-content:before {\n  display: none;\n}\n\n.shepherd-element,\n.shepherd-element:after,\n.shepherd-element:before,\n.shepherd-element *,\n.shepherd-element *:after,\n.shepherd-element *:before {\n  box-sizing: border-box;\n}\n\n.shepherd-element {\n  position: absolute;\n  display: none;\n}\n\n.shepherd-element.shepherd-open {\n  display: block;\n}\n\n.shepherd-element.shepherd-theme-arrows {\n  max-width: 100%;\n  max-height: 100%;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content {\n  border-radius: 5px;\n  position: relative;\n  font-family: inherit;\n  background: #fff;\n  color: #444;\n  padding: 1em;\n  font-size: 1.1em;\n  line-height: 1.5em;\n  -webkit-transform: translateZ(0);\n  transform: translateZ(0);\n  -webkit-filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));\n  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content:before {\n  content: \"\";\n  display: block;\n  position: absolute;\n  width: 0;\n  height: 0;\n  border-color: transparent;\n  border-width: 16px;\n  border-style: solid;\n  pointer-events: none;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-center .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-center .shepherd-content:before {\n  top: 100%;\n  left: 50%;\n  margin-left: -16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-center .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-center .shepherd-content:before {\n  bottom: 100%;\n  left: 50%;\n  margin-left: -16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-right.shepherd-element-attached-middle .shepherd-content {\n  margin-right: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-right.shepherd-element-attached-middle .shepherd-content:before {\n  left: 100%;\n  top: 50%;\n  margin-top: -16px;\n  border-left-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-left.shepherd-element-attached-middle .shepherd-content {\n  margin-left: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-left.shepherd-element-attached-middle .shepherd-content:before {\n  right: 100%;\n  top: 50%;\n  margin-top: -16px;\n  border-right-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-left.shepherd-target-attached-center .shepherd-content {\n  left: -32px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-right.shepherd-target-attached-center .shepherd-content {\n  left: 32px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-middle .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-middle .shepherd-content:before {\n  bottom: 100%;\n  left: 16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-middle .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-middle .shepherd-content:before {\n  bottom: 100%;\n  right: 16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-middle .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-middle .shepherd-content:before {\n  top: 100%;\n  left: 16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-middle .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-middle .shepherd-content:before {\n  top: 100%;\n  right: 16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-bottom .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-bottom .shepherd-content:before {\n  bottom: 100%;\n  left: 16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-bottom .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-bottom .shepherd-content:before {\n  bottom: 100%;\n  right: 16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-top .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-top .shepherd-content:before {\n  top: 100%;\n  left: 16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-top .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-top .shepherd-content:before {\n  top: 100%;\n  right: 16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-left .shepherd-content {\n  margin-right: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-left .shepherd-content:before {\n  top: 16px;\n  left: 100%;\n  border-left-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-right .shepherd-content {\n  margin-left: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-right .shepherd-content:before {\n  top: 16px;\n  right: 100%;\n  border-right-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-left .shepherd-content {\n  margin-right: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-left .shepherd-content:before {\n  bottom: 16px;\n  left: 100%;\n  border-left-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-right .shepherd-content {\n  margin-left: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-right .shepherd-content:before {\n  bottom: 16px;\n  right: 100%;\n  border-right-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-center.shepherd-has-title .shepherd-content:before,\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-bottom.shepherd-has-title .shepherd-content:before,\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-bottom.shepherd-has-title .shepherd-content:before {\n  border-bottom-color: #eee;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-has-title .shepherd-content header {\n  background: #eee;\n  padding: 1em;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-has-title .shepherd-content header a.shepherd-cancel-link {\n  padding: 0;\n  margin-bottom: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-has-cancel-link .shepherd-content header h3 {\n  float: left;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content {\n  padding: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content * {\n  font-size: inherit;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header {\n  *zoom: 1;\n  border-radius: 5px 5px 0 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header:after {\n  content: \"\";\n  display: table;\n  clear: both;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header h3 {\n  margin: 0;\n  line-height: 1;\n  font-weight: normal;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header a.shepherd-cancel-link {\n  float: right;\n  text-decoration: none;\n  font-size: 1.25em;\n  line-height: .8em;\n  font-weight: normal;\n  color: rgba(0, 0, 0, 0.5);\n  opacity: 0.25;\n  position: relative;\n  top: .1em;\n  padding: .8em;\n  margin-bottom: -.8em;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header a.shepherd-cancel-link:hover {\n  opacity: 1;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content .shepherd-text {\n  padding: 1em;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content .shepherd-text p {\n  margin: 0 0 .5em 0;\n  line-height: 1.3em;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content .shepherd-text p:last-child {\n  margin-bottom: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer {\n  padding: 0 1em 1em;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons {\n  text-align: right;\n  list-style: none;\n  padding: 0;\n  margin: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li {\n  display: inline;\n  padding: 0;\n  margin: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li .shepherd-button {\n  display: inline-block;\n  vertical-align: middle;\n  *vertical-align: auto;\n  *zoom: 1;\n  *display: inline;\n  border-radius: 3px;\n  cursor: pointer;\n  border: 0;\n  margin: 0 .5em 0 0;\n  font-family: inherit;\n  text-transform: uppercase;\n  letter-spacing: .1em;\n  font-size: .8em;\n  line-height: 1em;\n  padding: .75em 2em;\n  background: #3288e6;\n  color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li .shepherd-button.shepherd-button-secondary {\n  background: #eee;\n  color: #888;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li:last-child .shepherd-button {\n  margin-right: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-transparent-text .shepherd-text {\n  color: #3b744f;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content {\n  width: 400px;\n  max-width: 100%;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content a {\n  color: inherit;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li .shepherd-button {\n  background: #55a892;\n}\n\n.shepherd-element {\n  z-index: 10000;\n}", ""]);
+	exports.push([module.id, "body {\n  margin: 0;\n  font-family: 'Roboto', sans-serif;\n  font-size: 16px;\n  line-height: 1.4;\n}\n\nbody h1 {\n  color: #800080;\n  padding: 10px;\n}\n\npre[class*=\"language-\"] {\n  margin-bottom: 1em;\n}\n\n.wallpaper {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n}\n\n.footer {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  box-sizing: border-box;\n  width: 100%;\n  padding: 16px;\n  color: white;\n  text-align: center;\n  z-index: -1;\n}\n\n.screen {\n  position: absolute;\n  top: 0;\n  left: 0;\n  overflow: auto;\n  width: 100%;\n  height: 100%;\n}\n\n.screen button.showMap {\n  position: absolute !important;\n  top: 0;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 1000;\n  margin: 15px 10px;\n}\n\n.screen button.giveUp {\n  position: absolute !important;\n  top: 65px;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 1000;\n  margin: 15px 10px;\n}\n\n.screen button.logout {\n  position: absolute !important;\n  top: 130px;\n  right: 0;\n  padding: 10px 20px;\n  z-index: 1000;\n  margin: 15px 10px;\n}\n\n.login {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  max-width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n}\n\n.login .logo {\n  display: block;\n  height: 80px;\n  margin: 16px auto;\n}\n\n.login .or {\n  margin: 2px 0;\n  text-align: center;\n}\n\n.enroll {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  width: 280px;\n  margin-top: -253px;\n  margin-left: -140px;\n  padding: 16px;\n  z-index: 1 !important;\n}\n\n.enroll h2 {\n  margin-top: 8px;\n  font-weight: 400;\n  text-align: center;\n}\n\n.activity-card-container {\n  position: relative;\n  /*max-width: 1000px;*/\n  margin: 30px auto 80px;\n}\n\n.activity-card-container .activity-content {\n  float: left;\n  width: 65%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .activity-content p {\n  margin-top: 0;\n}\n\n.activity-card-container .activity-content img {\n  max-width: 100%;\n}\n\n.activity-card-container .company {\n  float: left;\n  width: 30%;\n  margin-bottom: 20px;\n}\n\n.activity-card-container .company p {\n  margin-top: 0;\n}\n\n.activity-card-container .company > div {\n  margin-bottom: 10px;\n}\n\n.screen-enter {\n  opacity: 0.01;\n}\n\n.screen-enter.screen-enter-active {\n  opacity: 1;\n  -webkit-transition: opacity 250ms 250ms ease-in;\n  transition: opacity 250ms 250ms ease-in;\n}\n\n.screen-leave {\n  opacity: 1;\n}\n\n.screen-leave.screen-leave-active {\n  opacity: 0.01;\n  -webkit-transition: opacity 250ms ease-in;\n  transition: opacity 250ms ease-in;\n}\n\n.hidden {\n  display: none;\n  visibility: hidden;\n  opacity: 0;\n}\n\n.text-center {\n  text-align: center;\n}\n\n.node {\n  cursor: pointer;\n}\n\n.overlay {\n  background-color: #fff;\n}\n\n.node circle {\n  fill: #fff;\n  /*stroke: steelblue;\n  stroke-width: 1.5px;*/\n}\n\n.node text {\n  font-size: 10px;\n  font-family: sans-serif;\n}\n\n.link {\n  fill: none;\n  stroke: #ddd;\n  stroke-width: 1.5px;\n}\n\n.templink {\n  fill: none;\n  stroke: red;\n  stroke-width: 3px;\n}\n\n.ghostCircle.show {\n  display: block;\n}\n\n.ghostCircle,\n.activeDrag .ghostCircle {\n  display: none;\n}\n\n#learning-tree {\n  width: 100%;\n  height: 100%;\n  background-color: #ccc;\n  display: block;\n}\n\n.defaultNode {\n  -webkit-animation: blinker 1s cubic-bezier(0.5, 0, 1, 1) infinite alternate;\n  animation: blinker 1s cubic-bezier(0.5, 0, 1, 1) infinite alternate;\n}\n\n@-webkit-keyframes blinker {\n  from {\n    opacity: 1;\n  }\n\n  to {\n    opacity: 0;\n  }\n}\n\n@keyframes blinker {\n  from {\n    opacity: 1;\n  }\n\n  to {\n    opacity: 0;\n  }\n}\n\n/*\n *  Onboarding Screen\n *\n */\n\n.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-top.shepherd-target-attached-left .shepherd-content:before,\n.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-top.shepherd-target-attached-right .shepherd-content:before,\n.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-bottom.shepherd-target-attached-left .shepherd-content:before,\n.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-bottom.shepherd-target-attached-right .shepherd-content:before {\n  display: none;\n}\n\n.shepherd-element,\n.shepherd-element:after,\n.shepherd-element:before,\n.shepherd-element *,\n.shepherd-element *:after,\n.shepherd-element *:before {\n  box-sizing: border-box;\n}\n\n.shepherd-element {\n  position: absolute;\n  display: none;\n}\n\n.shepherd-element.shepherd-open {\n  display: block;\n}\n\n.shepherd-element.shepherd-theme-arrows {\n  max-width: 100%;\n  max-height: 100%;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content {\n  border-radius: 5px;\n  position: relative;\n  font-family: inherit;\n  background: #fff;\n  color: #444;\n  padding: 1em;\n  font-size: 1.1em;\n  line-height: 1.5em;\n  -webkit-transform: translateZ(0);\n  transform: translateZ(0);\n  -webkit-filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));\n  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content:before {\n  content: \"\";\n  display: block;\n  position: absolute;\n  width: 0;\n  height: 0;\n  border-color: transparent;\n  border-width: 16px;\n  border-style: solid;\n  pointer-events: none;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-center .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-center .shepherd-content:before {\n  top: 100%;\n  left: 50%;\n  margin-left: -16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-center .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-center .shepherd-content:before {\n  bottom: 100%;\n  left: 50%;\n  margin-left: -16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-right.shepherd-element-attached-middle .shepherd-content {\n  margin-right: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-right.shepherd-element-attached-middle .shepherd-content:before {\n  left: 100%;\n  top: 50%;\n  margin-top: -16px;\n  border-left-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-left.shepherd-element-attached-middle .shepherd-content {\n  margin-left: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-left.shepherd-element-attached-middle .shepherd-content:before {\n  right: 100%;\n  top: 50%;\n  margin-top: -16px;\n  border-right-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-left.shepherd-target-attached-center .shepherd-content {\n  left: -32px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-right.shepherd-target-attached-center .shepherd-content {\n  left: 32px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-middle .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-middle .shepherd-content:before {\n  bottom: 100%;\n  left: 16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-middle .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-middle .shepherd-content:before {\n  bottom: 100%;\n  right: 16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-middle .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-middle .shepherd-content:before {\n  top: 100%;\n  left: 16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-middle .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-middle .shepherd-content:before {\n  top: 100%;\n  right: 16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-bottom .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-bottom .shepherd-content:before {\n  bottom: 100%;\n  left: 16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-bottom .shepherd-content {\n  margin-top: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-bottom .shepherd-content:before {\n  bottom: 100%;\n  right: 16px;\n  border-bottom-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-top .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-top .shepherd-content:before {\n  top: 100%;\n  left: 16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-top .shepherd-content {\n  margin-bottom: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-top .shepherd-content:before {\n  top: 100%;\n  right: 16px;\n  border-top-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-left .shepherd-content {\n  margin-right: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-left .shepherd-content:before {\n  top: 16px;\n  left: 100%;\n  border-left-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-right .shepherd-content {\n  margin-left: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-right .shepherd-content:before {\n  top: 16px;\n  right: 100%;\n  border-right-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-left .shepherd-content {\n  margin-right: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-right.shepherd-target-attached-left .shepherd-content:before {\n  bottom: 16px;\n  left: 100%;\n  border-left-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-right .shepherd-content {\n  margin-left: 16px;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-bottom.shepherd-element-attached-left.shepherd-target-attached-right .shepherd-content:before {\n  bottom: 16px;\n  right: 100%;\n  border-right-color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-center.shepherd-has-title .shepherd-content:before,\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-right.shepherd-target-attached-bottom.shepherd-has-title .shepherd-content:before,\n.shepherd-element.shepherd-theme-arrows.shepherd-element-attached-top.shepherd-element-attached-left.shepherd-target-attached-bottom.shepherd-has-title .shepherd-content:before {\n  border-bottom-color: #eee;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-has-title .shepherd-content header {\n  background: #eee;\n  padding: 1em;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-has-title .shepherd-content header a.shepherd-cancel-link {\n  padding: 0;\n  margin-bottom: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-has-cancel-link .shepherd-content header h3 {\n  float: left;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content {\n  padding: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content * {\n  font-size: inherit;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header {\n  *zoom: 1;\n  border-radius: 5px 5px 0 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header:after {\n  content: \"\";\n  display: table;\n  clear: both;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header h3 {\n  margin: 0;\n  line-height: 1;\n  font-weight: normal;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header a.shepherd-cancel-link {\n  float: right;\n  text-decoration: none;\n  font-size: 1.25em;\n  line-height: .8em;\n  font-weight: normal;\n  color: rgba(0, 0, 0, 0.5);\n  opacity: 0.25;\n  position: relative;\n  top: .1em;\n  padding: .8em;\n  margin-bottom: -.8em;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content header a.shepherd-cancel-link:hover {\n  opacity: 1;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content .shepherd-text {\n  padding: 1em;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content .shepherd-text p {\n  margin: 0 0 .5em 0;\n  line-height: 1.3em;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content .shepherd-text p:last-child {\n  margin-bottom: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer {\n  padding: 0 1em 1em;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons {\n  text-align: right;\n  list-style: none;\n  padding: 0;\n  margin: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li {\n  display: inline;\n  padding: 0;\n  margin: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li .shepherd-button {\n  display: inline-block;\n  vertical-align: middle;\n  *vertical-align: auto;\n  *zoom: 1;\n  *display: inline;\n  border-radius: 3px;\n  cursor: pointer;\n  border: 0;\n  margin: 0 .5em 0 0;\n  font-family: inherit;\n  text-transform: uppercase;\n  letter-spacing: .1em;\n  font-size: .8em;\n  line-height: 1em;\n  padding: .75em 2em;\n  background: #3288e6;\n  color: #fff;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li .shepherd-button.shepherd-button-secondary {\n  background: #eee;\n  color: #888;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li:last-child .shepherd-button {\n  margin-right: 0;\n}\n\n.shepherd-element.shepherd-theme-arrows.shepherd-transparent-text .shepherd-text {\n  color: #3b744f;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content {\n  width: 400px;\n  max-width: 100%;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content a {\n  color: inherit;\n}\n\n.shepherd-element.shepherd-theme-arrows .shepherd-content footer .shepherd-buttons li .shepherd-button {\n  background: #55a892;\n}\n\n.shepherd-element {\n  z-index: 10000;\n}", ""]);
 
 	// exports
 

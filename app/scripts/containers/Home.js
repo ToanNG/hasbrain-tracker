@@ -95,7 +95,9 @@ class Home extends Component {
     const token = auth.get('token');
     let currentTime = new Date().getTime();
     let workingTime = (currentTime - startWorkingTime)/1000;
-    storyActions.addWorkingTime(token, todayActivity.storyId, workingTime);
+    if (token && todayActivity) {
+      storyActions.addWorkingTime(token, todayActivity.storyId, workingTime);
+    }
   }
 
   componentWillUnmount = () => {
@@ -580,7 +582,6 @@ class Home extends Component {
           period = todayActivity.workingTime;
         }
         UserKit.track('learning_time', {activity_id: todayActivity._id, activity_name: todayActivity.name, student_id: currentUser._id, student_name: currentUser.name,timestamp: new Date().getTime(), period: period});
-        actions.deleteTodayActivity();
         userActions.addPoints(token, points).then(()=>{
           userActions.updateChaining(token, 'increase');
         });
@@ -868,7 +869,7 @@ class Home extends Component {
               <D3Tree
                 treeData={this._treeData()}
                 onClick={this._handleClickOnMap}
-                canClickOnNode={false} />
+                canClickOnNode={true} />
             </Dialog>
 
             <Dialog

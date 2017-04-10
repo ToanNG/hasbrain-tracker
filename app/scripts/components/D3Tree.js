@@ -33,7 +33,11 @@ class D3Tree extends Component {
         var viewerWidth = window.innerWidth,
             viewerHeight = window.innerHeight;
 
-        var tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
+        var tree = d3.layout.tree()
+            .separation(function(a, b) {
+                return ((a.parent == root) && (b.parent == root)) ? 3 : 1;
+            })
+            .size([viewerHeight, viewerWidth]);
 
         var diagonal = d3.svg.diagonal()
             .projection(function(d) {
@@ -155,7 +159,7 @@ class D3Tree extends Component {
                 links = tree.links(nodes);
 
             nodes.forEach(function(d) {
-                d.y = (d.depth * 100);
+                d.y = (d.depth * 200);
             });
 
             node = svgGroup.selectAll("g.node")
