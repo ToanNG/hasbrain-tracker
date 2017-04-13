@@ -49676,13 +49676,46 @@
 	      self.setState({ isSubmitting: true });
 
 	      // Determine that which learning path are learning for choosing the right test server
-	      if (todayActivity.learningPath._id == '58130aa6c0c71fa70567ec09') {
-	        // C++
-	        actions.submitAnswerCpp(token, currentUser._id, todayActivity.activityId, repoUrl).then(function (res) {
-	          (0, _xml2js.parseString)(res, function (err, result) {
-	            if (result.Catch.OverallResults[0].$.successes == 0 && result.Catch.OverallResults[0].$.failures == 1) {
-	              throw new Error('Test fail');
-	            } else if (result.Catch.OverallResults[0].$.successes == 5 && result.Catch.OverallResults[0].$.failures == 0) {
+	      switch (todayActivity.learningPath._id) {
+	        case '58130aa6c0c71fa70567ec09':
+	          // C++
+	          actions.submitAnswerCpp(token, currentUser._id, todayActivity.activityId, repoUrl).then(function (res) {
+	            (0, _xml2js.parseString)(res, function (err, result) {
+	              if (result.Catch.OverallResults[0].$.successes == 0 && result.Catch.OverallResults[0].$.failures == 1) {
+	                throw new Error('Test fail');
+	              } else if (result.Catch.OverallResults[0].$.successes == 5 && result.Catch.OverallResults[0].$.failures == 0) {
+	                storyActions.setCompleteStory(token, todayActivity.storyId).then(function (status) {
+	                  if (status === 200) {
+	                    self.setState({ openMoveToKnowledgeDialog: true, isSubmitting: false }, function () {
+	                      UserKit.track('submit', { status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id });
+	                      self.confirm.dismiss();
+	                    });
+	                  } else {
+	                    self.setState({ isSubmitting: false }, function () {
+	                      UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
+	                      self._handleOpenDialog('Test fails! Please try again.');
+	                      userActions.updateChaining(token, 'reset');
+	                    });
+	                  }
+	                });
+	              } else {
+	                throw new Error('Unexpected Error!');
+	              }
+	            });
+	          })['catch'](function (err) {
+	            _this.setState({ isSubmitting: false }, function () {
+	              UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
+	              _this._handleOpenDialog(err.message);
+	              userActions.updateChaining(token, 'reset');
+	            });
+	          });
+	          break;
+	        case '5815923cc0c71fa70567ec1a': // Java
+	        case '584d10018e2d2cda0e3b4d25':
+	          // Android (Bahasa)
+	          actions.submitAnswerJava(token, currentUser._id, todayActivity.activityId, repoUrl).then(function (res) {
+	            var lines = res.split('\n');
+	            if (lines[4].indexOf('OK') > -1) {
 	              storyActions.setCompleteStory(token, todayActivity.storyId).then(function (status) {
 	                if (status === 200) {
 	                  self.setState({ openMoveToKnowledgeDialog: true, isSubmitting: false }, function () {
@@ -49698,76 +49731,48 @@
 	                }
 	              });
 	            } else {
-	              throw new Error('Unexpected Error!');
-	            }
-	          });
-	        })['catch'](function (err) {
-	          _this.setState({ isSubmitting: false }, function () {
-	            UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
-	            _this._handleOpenDialog(err.message);
-	            userActions.updateChaining(token, 'reset');
-	          });
-	        });
-	      } else if (todayActivity.learningPath._id == '5815923cc0c71fa70567ec1a') {
-	        // java
-	        actions.submitAnswerJava(token, currentUser._id, todayActivity.activityId, repoUrl).then(function (res) {
-	          var lines = res.split('\n');
-	          if (lines[4].indexOf('OK') > -1) {
-	            storyActions.setCompleteStory(token, todayActivity.storyId).then(function (status) {
-	              if (status === 200) {
-	                self.setState({ openMoveToKnowledgeDialog: true, isSubmitting: false }, function () {
-	                  UserKit.track('submit', { status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id });
-	                  self.confirm.dismiss();
-	                });
-	              } else {
-	                self.setState({ isSubmitting: false }, function () {
-	                  UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
-	                  self._handleOpenDialog('Test fails! Please try again.');
-	                  userActions.updateChaining(token, 'reset');
-	                });
+	              var ret = '';
+	              for (var i = 3; i < lines.length - 5; i++) {
+	                ret += '\n' + lines[i];
 	              }
-	            });
-	          } else {
-	            var ret = '';
-	            for (var i = 3; i < lines.length - 5; i++) {
-	              ret += '\n' + lines[i];
+	              throw new Error(ret);
 	            }
-	            throw new Error(ret);
-	          }
-	        })['catch'](function (err) {
-	          _this.setState({ isSubmitting: false }, function () {
-	            UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
-	            _this._handleOpenDialog(err.message);
-	            userActions.updateChaining(token, 'reset');
-	          });
-	        });
-	      } else {
-	        actions.submitAnswer(token, currentUser._id, todayActivity.activityId, repoUrl).then(function (res) {
-	          if (res.failures.length > 0) {
-	            throw new Error('Test fail');
-	          } else {
-	            storyActions.setCompleteStory(token, todayActivity.storyId).then(function (status) {
-	              if (status === 200) {
-	                self.setState({ openMoveToKnowledgeDialog: true, isSubmitting: false }, function () {
-	                  UserKit.track('submit', { status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id });
-	                  self.confirm.dismiss();
-	                });
-	              } else {
-	                self.setState({ isSubmitting: false }, function () {
-	                  UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
-	                  self._handleOpenDialog('Test fails! Please try again.');
-	                  userActions.updateChaining(token, 'reset');
-	                });
-	              }
+	          })['catch'](function (err) {
+	            _this.setState({ isSubmitting: false }, function () {
+	              UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
+	              _this._handleOpenDialog(err.message);
+	              userActions.updateChaining(token, 'reset');
 	            });
-	          }
-	        })['catch'](function (err) {
-	          _this.setState({ isSubmitting: false }, function () {
-	            UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
-	            _this._handleOpenDialog(err.message);
-	            userActions.updateChaining(token, 'reset');
 	          });
-	        });
+	          break;
+	        default:
+	          actions.submitAnswer(token, currentUser._id, todayActivity.activityId, repoUrl).then(function (res) {
+	            if (res.failures.length > 0) {
+	              throw new Error('Test fail');
+	            } else {
+	              storyActions.setCompleteStory(token, todayActivity.storyId).then(function (status) {
+	                if (status === 200) {
+	                  self.setState({ openMoveToKnowledgeDialog: true, isSubmitting: false }, function () {
+	                    UserKit.track('submit', { status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id });
+	                    self.confirm.dismiss();
+	                  });
+	                } else {
+	                  self.setState({ isSubmitting: false }, function () {
+	                    UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
+	                    self._handleOpenDialog('Test fails! Please try again.');
+	                    userActions.updateChaining(token, 'reset');
+	                  });
+	                }
+	              });
+	            }
+	          })['catch'](function (err) {
+	            _this.setState({ isSubmitting: false }, function () {
+	              UserKit.track('submit', { status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id });
+	              _this._handleOpenDialog(err.message);
+	              userActions.updateChaining(token, 'reset');
+	            });
+	          });
+	          break;
 	      }
 	    };
 
@@ -50291,7 +50296,7 @@
 	          ),
 	          !isCompleted && !solvedProblem && _react2['default'].createElement(
 	            _materialUiLibFloatingActionButton2['default'],
-	            { onTouchTap: _this._handleGiveUpTap, className: 'giveUp' },
+	            { secondary: true, onTouchTap: _this._handleGiveUpTap, className: 'giveUp' },
 	            _react2['default'].createElement(
 	              _materialUiLibFontIcon2['default'],
 	              { className: 'material-icons' },
@@ -50300,7 +50305,7 @@
 	          ),
 	          _react2['default'].createElement(
 	            _materialUiLibFloatingActionButton2['default'],
-	            { secondary: true, onTouchTap: _this._handleLogoutTap, className: 'logout' },
+	            { onTouchTap: _this._handleLogoutTap, className: 'logout' },
 	            _react2['default'].createElement(
 	              _materialUiLibFontIcon2['default'],
 	              { className: 'material-icons' },

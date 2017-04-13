@@ -305,96 +305,101 @@ class Home extends Component {
     self.setState({isSubmitting: true});
 
     // Determine that which learning path are learning for choosing the right test server
-    if(todayActivity.learningPath._id == '58130aa6c0c71fa70567ec09') { // C++
-      actions.submitAnswerCpp(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
-        parseString(res, function (err, result) {
-          if(result.Catch.OverallResults[0].$.successes == 0 && result.Catch.OverallResults[0].$.failures == 1){
-            throw new Error('Test fail');
-          } else if(result.Catch.OverallResults[0].$.successes == 5 && result.Catch.OverallResults[0].$.failures == 0){
-            storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
-              if(status === 200){
-                self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
-                  UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-                  self.confirm.dismiss();
+    switch (todayActivity.learningPath._id) {
+        case '58130aa6c0c71fa70567ec09': // C++
+            actions.submitAnswerCpp(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
+              parseString(res, function (err, result) {
+                if(result.Catch.OverallResults[0].$.successes == 0 && result.Catch.OverallResults[0].$.failures == 1){
+                  throw new Error('Test fail');
+                } else if(result.Catch.OverallResults[0].$.successes == 5 && result.Catch.OverallResults[0].$.failures == 0){
+                  storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
+                    if(status === 200){
+                      self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
+                        UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                        self.confirm.dismiss();
+                      });
+                    } else {
+                      self.setState({isSubmitting: false}, () => {
+                        UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                        self._handleOpenDialog('Test fails! Please try again.');
+                        userActions.updateChaining(token, 'reset');
+                      });
+                    }
+                  });
+                } else {
+                  throw new Error('Unexpected Error!');
+                }
+              });
+            }).catch((err)=>{
+              this.setState({isSubmitting: false}, ()=>{
+                UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                this._handleOpenDialog(err.message);
+                userActions.updateChaining(token, 'reset');
+              });
+            });
+            break;
+        case '5815923cc0c71fa70567ec1a': // Java
+        case '584d10018e2d2cda0e3b4d25': // Android (Bahasa)
+            actions.submitAnswerJava(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
+              let lines = res.split('\n');
+              if ( lines[4].indexOf( 'OK' ) > -1 ) {
+                storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
+                  if(status === 200){
+                    self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
+                      UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                      self.confirm.dismiss();
+                    });
+                  } else {
+                    self.setState({isSubmitting: false}, () => {
+                      UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                      self._handleOpenDialog('Test fails! Please try again.');
+                      userActions.updateChaining(token, 'reset');
+                    });
+                  }
                 });
               } else {
-                self.setState({isSubmitting: false}, () => {
-                  UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-                  self._handleOpenDialog('Test fails! Please try again.');
-                  userActions.updateChaining(token, 'reset');
+                let ret = '';
+                for(let i = 3; i < (lines.length - 5); i++){
+                  ret += '\n' + lines[i];
+                }
+                throw new Error(ret);
+              }
+            }).catch((err)=>{
+              this.setState({isSubmitting: false}, ()=>{
+                UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                this._handleOpenDialog(err.message);
+                userActions.updateChaining(token, 'reset');
+              });
+            });
+            break;
+        default:
+            actions.submitAnswer(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
+              if(res.failures.length > 0){
+                throw new Error('Test fail');
+              } else {
+                storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
+                  if(status === 200){
+                    self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
+                      UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                      self.confirm.dismiss();
+                    });
+                  } else {
+                    self.setState({isSubmitting: false}, () => {
+                      UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                      self._handleOpenDialog('Test fails! Please try again.');
+                      userActions.updateChaining(token, 'reset');
+                    });
+                  }
                 });
               }
+            }).catch((err)=>{
+              this.setState({isSubmitting: false}, ()=>{
+                UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
+                this._handleOpenDialog(err.message);
+                userActions.updateChaining(token, 'reset');
+              });
             });
-          } else {
-            throw new Error('Unexpected Error!');
-          }
-        });
-      }).catch((err)=>{
-        this.setState({isSubmitting: false}, ()=>{
-          UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-          this._handleOpenDialog(err.message);
-          userActions.updateChaining(token, 'reset');
-        });
-      });
-    } else if(todayActivity.learningPath._id == '5815923cc0c71fa70567ec1a') { // java
-      actions.submitAnswerJava(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
-        let lines = res.split('\n');
-        if ( lines[4].indexOf( 'OK' ) > -1 ) {
-          storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
-            if(status === 200){
-              self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
-                UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-                self.confirm.dismiss();
-              });
-            } else {
-              self.setState({isSubmitting: false}, () => {
-                UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-                self._handleOpenDialog('Test fails! Please try again.');
-                userActions.updateChaining(token, 'reset');
-              });
-            }
-          });
-        } else {
-          let ret = '';
-          for(let i = 3; i < (lines.length - 5); i++){
-            ret += '\n' + lines[i];
-          }
-          throw new Error(ret);
-        }
-      }).catch((err)=>{
-        this.setState({isSubmitting: false}, ()=>{
-          UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-          this._handleOpenDialog(err.message);
-          userActions.updateChaining(token, 'reset');
-        });
-      });
-    } else {
-      actions.submitAnswer(token, currentUser._id, todayActivity.activityId, repoUrl).then(function(res){
-        if(res.failures.length > 0){
-          throw new Error('Test fail');
-        } else {
-          storyActions.setCompleteStory(token, todayActivity.storyId).then((status)=>{
-            if(status === 200){
-              self.setState({openMoveToKnowledgeDialog : true, isSubmitting: false}, ()=>{
-                UserKit.track('submit', {status: "success", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-                self.confirm.dismiss();
-              });
-            } else {
-              self.setState({isSubmitting: false}, () => {
-                UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-                self._handleOpenDialog('Test fails! Please try again.');
-                userActions.updateChaining(token, 'reset');
-              });
-            }
-          });
-        }
-      }).catch((err)=>{
-        this.setState({isSubmitting: false}, ()=>{
-          UserKit.track('submit', {status: "failure", timestamp: new Date().getTime(), activity_id: todayActivity._id});
-          this._handleOpenDialog(err.message);
-          userActions.updateChaining(token, 'reset');
-        });
-      });
+            break;
     }
   }
 
@@ -816,8 +821,8 @@ class Home extends Component {
           (todayActivity) ?
           <div>
             <FloatingActionButton secondary={true} onTouchTap={this._handleShowMapTap} className='showMap'><FontIcon className='material-icons'>map</FontIcon></FloatingActionButton>
-            {(!isCompleted && !solvedProblem) && <FloatingActionButton onTouchTap={this._handleGiveUpTap} className='giveUp'><FontIcon className='material-icons'>clear</FontIcon></FloatingActionButton>}
-            <FloatingActionButton secondary={true} onTouchTap={this._handleLogoutTap} className='logout'><FontIcon className='material-icons'>exit_to_app</FontIcon></FloatingActionButton>
+            {(!isCompleted && !solvedProblem) && <FloatingActionButton secondary={true} onTouchTap={this._handleGiveUpTap} className='giveUp'><FontIcon className='material-icons'>clear</FontIcon></FloatingActionButton>}
+            <FloatingActionButton onTouchTap={this._handleLogoutTap} className='logout'><FontIcon className='material-icons'>exit_to_app</FontIcon></FloatingActionButton>
 
             <Dialog
               title='Notice'
